@@ -1,8 +1,8 @@
 // src/features/empleados/service.js
 import api from "@/lib/api";
 
-/** Normaliza una fila proveniente del backend a la UI */
-function normalize(row = {}) {
+/** Normaliza un empleado del backend a la UI */
+function normalizeEmpleado(row = {}) {
   const nombre = [
     row.primer_nombre_empl,
     row.segundo_nombre_empl,
@@ -15,15 +15,20 @@ function normalize(row = {}) {
     .trim();
 
   return {
-    // clave primaria normalizada
-    id: row.id_empleado != null ? String(row.id_empleado) : row.id != null ? String(row.id) : null,
-
-    // campos visibles
+    id:
+      row.id_empleado != null
+        ? Number(row.id_empleado)
+        : row.id != null
+        ? Number(row.id)
+        : null,
     cedula: row.cedula_empleado ?? row.cedula ?? "",
     nombre,
     email: row.email_empleado ?? row.email ?? "",
     movil: row.movil_empleado ?? row.movil ?? "",
-    estado: (row.estado ?? "").toString().toLowerCase() === "inactivo" ? "inactivo" : "activo",
+    estado:
+      (row.estado ?? "").toString().toLowerCase() === "inactivo"
+        ? "inactivo"
+        : "activo",
 
     // para formulario
     primer_nombre_empl: row.primer_nombre_empl ?? "",
@@ -32,13 +37,12 @@ function normalize(row = {}) {
     segundo_apellido_empl: row.segundo_apellido_empl ?? "",
     fecha_nacimiento_empl: row.fecha_nacimiento_empl ?? null,
 
-    // auditoría / raw
     fecha_auditoria: row.fecha_auditoria ?? null,
     _raw: row,
   };
 }
 
-/** Lista paginada de empleados */
+/** Listado paginado de empleados */
 export async function fetchEmpleados({
   q = "",
   estado = "",
@@ -50,7 +54,6 @@ export async function fetchEmpleados({
   const params = { q, estado, page, pageSize, sortBy, sortDir };
   const { data } = await api.get("/empleados", { params });
 
-  // Soporta varias envolturas posibles
   const rows = Array.isArray(data?.data)
     ? data.data
     : Array.isArray(data?.items)
@@ -60,38 +63,41 @@ export async function fetchEmpleados({
     : [];
 
   return {
-    items: rows.map(normalize),
+    items: rows.map(normalizeEmpleado),
     total: data?.total ?? rows.length,
     page: data?.page ?? page,
     pageSize: data?.pageSize ?? pageSize,
   };
 }
 
-/** Detalle de empleado: tu endpoint retorna { empleado, perfiles_activos, componentes_activos } */
+/** Detalle de empleado: { empleado, perfiles_activos, componentes_activos, ... } */
 export async function getEmpleadoDetalle(id) {
   if (!id) return null;
   const { data } = await api.get(`/empleados/${id}`);
-
-  // Puede venir como data.data o directo
   const payload = data?.data ?? data ?? {};
-  const empleado = payload?.empleado ?? payload?.Empleado ?? null;
-
+  const empleado = payload?.empleado ?? null;
   if (!empleado) return null;
 
-  const norm = normalize(empleado);
-
-  // Si quisieras usar estos IDs en el form más adelante:
-  const perfilActivo = Array.isArray(payload?.perfiles_activos) ? payload.perfiles_activos[0] : null;
-  const componenteActivo = Array.isArray(payload?.componentes_activos) ? payload.componentes_activos[0] : null;
+  const norm = normalizeEmpleado(empleado);
+  const perfilActivo = Array.isArray(payload?.perfiles_activos)
+    ? payload.perfiles_activos[0]
+    : null;
+  const componenteActivo = Array.isArray(payload?.componentes_activos)
+    ? payload.componentes_activos[0]
+    : null;
 
   return {
     ...norm,
-    perfil_id: perfilActivo?.id_perfil ? String(perfilActivo.id_perfil) : undefined,
-    componente_id: componenteActivo?.id_componente ? String(componenteActivo.id_componente) : undefined,
+    perfil_id: perfilActivo?.id_perfil
+      ? Number(perfilActivo.id_perfil)
+      : undefined,
+    componente_id: componenteActivo?.id_componente
+      ? Number(componenteActivo.id_componente)
+      : undefined,
   };
 }
 
-/** Crear empleado (mapeo form -> backend) */
+/** Crear empleado */
 export async function createEmpleado(payload) {
   const body = {
     cedula_empleado: payload.cedula?.trim(),
@@ -105,7 +111,8 @@ export async function createEmpleado(payload) {
     estado: payload.estado,
   };
   const { data } = await api.post("/empleados", body);
-  return normalize(data?.data ?? data ?? {});
+  const created = data?.data ?? data ?? {};
+  return normalizeEmpleado(created);
 }
 
 /** Actualizar empleado */
@@ -122,5 +129,57 @@ export async function updateEmpleado(id, payload) {
     estado: payload.estado,
   };
   const { data } = await api.put(`/empleados/${id}`, body);
-  return normalize(data?.data ?? data ?? {});
+  const updated = data?.data ?? data ?? {};
+  return normalizeEmpleado(updated);
+}
+
+/** ===== Catálogos (cargar TODO para selects) ===== */
+export async function fetchPerfilesAll() {
+  const { data } = await api.get("/perfiles", {
+    params: { page: 1, pageSize: 500 },
+  });
+  const rows = Array.isArray(data?.items)
+    ? data.items
+    : Array.isArray(data?.data)
+    ? data.data
+    : Array.isArray(data)
+    ? data
+    : [];
+  return rows.map((r) => ({
+    id: Number(r.id_perfil ?? r.id),
+    label: r.perfil,
+    value: Number(r.id_perfil ?? r.id),
+  }));
+}
+
+export async function fetchComponentesAll() {
+  const { data } = await api.get("/componentes", {
+    params: { page: 1, pageSize: 500, sortBy: "componente", sortDir: "asc" },
+  });
+  const rows = Array.isArray(data?.items)
+    ? data.items
+    : Array.isArray(data?.data)
+    ? data.data
+    : Array.isArray(data)
+    ? data
+    : [];
+  return rows.map((r) => ({
+    id: Number(r.id_componente ?? r.id),
+    label: r.componente,
+    value: Number(r.id_componente ?? r.id),
+  }));
+}
+
+/** ===== Asignaciones (histórico en backend) ===== */
+export async function assignPerfilEmpleado(idEmpleado, idPerfil) {
+  const { data } = await api.put(`/empleados/${idEmpleado}/perfil`, {
+    id_perfil: Number(idPerfil),
+  });
+  return data?.data ?? true;
+}
+export async function assignComponenteEmpleado(idEmpleado, idComponente) {
+  const { data } = await api.put(`/empleados/${idEmpleado}/componente`, {
+    id_componente: Number(idComponente),
+  });
+  return data?.data ?? true;
 }
