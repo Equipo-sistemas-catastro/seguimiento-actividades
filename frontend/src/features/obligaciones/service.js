@@ -21,21 +21,3 @@ export async function fetchObligaciones({ q = "", page = 1, pageSize = 200 } = {
   if (Array.isArray(data?.rows)) return data.rows.map(normalize);
   return [];
 }
-
-/** Crear obligación */
-export async function createObligacion(body = {}) {
-  const payload = {
-    obligacion: body.obligacion ?? body.obligacion_contractual ?? "",
-  };
-  const { data } = await api.post("/obligaciones", payload);
-  return data?.id_obligacion ?? data?.id ?? data;
-}
-
-/** Actualizar obligación */
-export async function updateObligacion(id, body = {}) {
-  const payload = {
-    obligacion: body.obligacion ?? body.obligacion_contractual ?? "",
-  };
-  await api.put(`/obligaciones/${id}`, payload);
-  return true;
-}

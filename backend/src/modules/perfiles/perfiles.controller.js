@@ -8,51 +8,55 @@ async function list(req, res, next) {
       page: req.query.page,
       pageSize: req.query.pageSize
     });
+    // Puedes responder array o {items,total,...}; dejamos estándar del repo:
     res.json(data);
   } catch (e) { next(e); }
 }
 
-// GET /api/perfiles/:id  -> ahora devuelve perfil + obligaciones + usuarios
+// GET /api/perfiles/:id  -> devuelve perfil + obligaciones
 async function get(req, res, next) {
   try {
-    const data = await svc.getByIdFull(req.params.id);
-    if (!data) return res.status(404).json({ error: 'Perfil no encontrado' });
-    res.json(data);
+    const id = Number(req.params.id);
+    const item = await svc.getByIdFull(id);
+    if (!item) return res.status(404).json({ error: 'Perfil no encontrado' });
+    res.json(item);
   } catch (e) { next(e); }
 }
 
 // POST /api/perfiles
 async function create(req, res, next) {
   try {
-    const { perfil, descripcion_perfil } = req.body || {};
+    const { perfil, descripcion } = req.body || {};
     if (!perfil) return res.status(400).json({ error: 'perfil es requerido' });
-    const id = await svc.create({ perfil, descripcion_perfil }, req.user.id);
-    res.status(201).json({ id_perfil: id });
+
+    const userId = req.user?.id || null; // auditoría
+    const id = await svc.create({ perfil, descripcion }, userId);
+    res.json({ id_perfil: id });
   } catch (e) { next(e); }
 }
 
-// PUT /api/perfiles/:id  (solo datos base)
+// PUT /api/perfiles/:id
 async function update(req, res, next) {
   try {
-    const { perfil, descripcion_perfil } = req.body || {};
+    const id = Number(req.params.id);
+    const { perfil, descripcion } = req.body || {};
     if (!perfil) return res.status(400).json({ error: 'perfil es requerido' });
-    await svc.update(req.params.id, { perfil, descripcion_perfil }, req.user.id);
+
+    const userId = req.user?.id || null;
+    await svc.update(id, { perfil, descripcion }, userId);
     res.json({ ok: true });
   } catch (e) { next(e); }
 }
 
-// PUT /api/perfiles/:id/asignaciones  (obligacionesIds[], usuariosIds[])
+// PUT /api/perfiles/:id/asignaciones
+// Body esperado: { obligacionesIds: number[], usuariosIds?: [] }  ← usuariosIds se ignora si viene vacío
 async function updateAssignments(req, res, next) {
   try {
-    const { obligacionesIds, usuariosIds } = req.body || {};
-    await svc.updateAssignments(
-      req.params.id,
-      {
-        obligacionesIds: Array.isArray(obligacionesIds) ? obligacionesIds : [],
-        usuariosIds: Array.isArray(usuariosIds) ? usuariosIds : []
-      },
-      req.user.id
-    );
+    const idPerfil = Number(req.params.id);
+    const { obligacionesIds = [], usuariosIds = [] } = req.body || {};
+    const userId = req.user?.id || null;
+
+    await svc.updateAssignments(idPerfil, { obligacionesIds, usuariosIds }, userId);
     res.json({ ok: true });
   } catch (e) { next(e); }
 }

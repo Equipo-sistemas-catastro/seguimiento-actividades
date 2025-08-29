@@ -12,6 +12,7 @@ import {
   Table,
   Tooltip,
   Typography,
+  Tag,
 } from "antd";
 import { PlusOutlined, EditOutlined, LinkOutlined } from "@ant-design/icons";
 import {
@@ -35,7 +36,7 @@ export default function PerfilesPage() {
 
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [editing, setEditing] = useState(null); // perfil actual o null
+  const [editing, setEditing] = useState(null); // { id, perfil, descripcion } | null
   const [form] = Form.useForm();
 
   // ----------------- Estado selector de Obligaciones -----------
@@ -43,7 +44,12 @@ export default function PerfilesPage() {
   const [selLoading, setSelLoading] = useState(false);
   const [selRows, setSelRows] = useState([]);
   const [selQ, setSelQ] = useState("");
-  const [selectedObligaciones, setSelectedObligaciones] = useState([]); // array de IDs
+
+  // Selección de obligaciones:
+  // - selectedIds: ids actualmente seleccionados
+  // - selectedMap: { [id]: nombre } para mostrar tags y permitir deseleccionar desde el modal principal
+  const [selectedObligaciones, setSelectedObligaciones] = useState([]); // number[]
+  const [selectedMap, setSelectedMap] = useState({}); // { [id]: nombre }
 
   // ----------------- Carga de Perfiles -----------------
   const load = async () => {
@@ -72,7 +78,8 @@ export default function PerfilesPage() {
   // ----------------- Handlers Perfiles -----------------
   const handleAdd = () => {
     setEditing(null);
-    setSelectedObligaciones([]); // limpio selección
+    setSelectedObligaciones([]);
+    setSelectedMap({});
     setOpen(true);
   };
 
@@ -93,16 +100,25 @@ export default function PerfilesPage() {
         try {
           const detalle = await fetchPerfilById(editing.id);
           const obligaciones = Array.isArray(detalle?.obligaciones) ? detalle.obligaciones : [];
-          const ids = obligaciones
-            .map((o) => o.id_obligacion ?? o.id)
-            .filter((x) => x != null);
+          const ids = [];
+          const map = {};
+          for (const o of obligaciones) {
+            const id = o.id_obligacion ?? o.id;
+            if (id != null) {
+              ids.push(id);
+              map[id] = o.obligacion_contractual ?? o.obligacion ?? o.descripcion ?? `Obligación ${id}`;
+            }
+          }
           setSelectedObligaciones(ids);
+          setSelectedMap(map);
         } catch {
           setSelectedObligaciones([]);
+          setSelectedMap({});
         }
       } else {
         form.resetFields();
         setSelectedObligaciones([]);
+        setSelectedMap({});
       }
     })();
   }, [open, editing, form]);
@@ -112,43 +128,34 @@ export default function PerfilesPage() {
       const values = await form.validateFields();
       setSaving(true);
 
-      // Paso 1: crear/actualizar perfil y obtener idPerfil confiable
+      // Paso 1: crear/actualizar perfil y obtener idPerfil
       let idPerfil = editing?.id;
       if (editing) {
         await updatePerfil(idPerfil, values);
       } else {
-        idPerfil = await createPerfil(values); // ahora SIEMPRE retorna el id
+        idPerfil = await createPerfil(values);
       }
 
       if (!idPerfil) {
         throw new Error("El backend no devolvió el id del perfil al guardar.");
       }
 
-      // Paso 2: asignar obligaciones (en su propio try para diagnosticar)
-      try {
-        await setAsignacionesPerfil(idPerfil, {
-          obligacionesIds: selectedObligaciones,
-          usuariosIds: [],
-        });
-      } catch (e2) {
-        console.error("Asignaciones (PUT /perfiles/:id/asignaciones) falló:", e2?.response?.data || e2);
-        message.error("El perfil se guardó, pero falló la asignación de obligaciones");
-        // Opcional: salir aquí si prefieres no cerrar el modal
-        // return;
-      }
+      // Paso 2: asignar obligaciones (contrato real del backend)
+      await setAsignacionesPerfil(idPerfil, {
+        obligacionesIds: selectedObligaciones,
+        usuariosIds: [],
+      });
 
       message.success(editing ? "Perfil actualizado" : "Perfil creado");
       setOpen(false);
       setEditing(null);
       await load();
     } catch (e) {
-      // e?.response?.data puede venir vacío ({}) → mostramos un mensaje claro
       const serverMsg =
         e?.response?.data?.message ||
         e?.response?.data?.error ||
         (typeof e?.message === "string" ? e.message : null) ||
         "Error desconocido al guardar el perfil";
-
       console.error("Guardar perfil:", e?.response?.data || e);
       message.error(serverMsg);
     } finally {
@@ -175,6 +182,7 @@ export default function PerfilesPage() {
     }
   };
 
+  // Buscador + orden asc
   const selFiltered = useMemo(() => {
     const term = selQ.trim().toLowerCase();
     let rows = selRows;
@@ -182,9 +190,33 @@ export default function PerfilesPage() {
     return [...rows].sort((a, b) => (a.id ?? 0) - (b.id ?? 0));
   }, [selQ, selRows]);
 
+  // rowSelection: checkbox por fila
   const rowSelection = {
     selectedRowKeys: selectedObligaciones,
-    onChange: (keys) => setSelectedObligaciones(keys),
+    onChange: (keys) => {
+      // Reconstruye el mapa de nombres usando:
+      // - filas actuales del selector (para los recién añadidos)
+      // - y conserva los que ya estaban si siguen seleccionados
+      const nextIds = Array.isArray(keys) ? keys : [];
+      const nextMap = {};
+
+      // Conserva nombres previos si el id sigue seleccionado
+      for (const id of nextIds) {
+        if (selectedMap[id]) {
+          nextMap[id] = selectedMap[id];
+        }
+      }
+
+      // Completa nombres faltantes desde las filas visibles
+      for (const row of selRows) {
+        if (nextIds.includes(row.id) && !nextMap[row.id]) {
+          nextMap[row.id] = row.obligacion || `Obligación ${row.id}`;
+        }
+      }
+
+      setSelectedObligaciones(nextIds);
+      setSelectedMap(nextMap);
+    },
     preserveSelectedRowKeys: true,
   };
 
@@ -288,7 +320,8 @@ export default function PerfilesPage() {
             <Input.TextArea rows={3} />
           </Form.Item>
 
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
+          {/* Relacionar obligaciones */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
             <Space>
               <Tooltip title="Selecciona una o varias obligaciones para asociarlas a este perfil">
                 <Button icon={<LinkOutlined />} onClick={openSelector}>
@@ -301,6 +334,30 @@ export default function PerfilesPage() {
                   : "Sin obligaciones seleccionadas"}
               </span>
             </Space>
+
+            {/* Listado de obligaciones seleccionadas como tags (se pueden deseleccionar) */}
+            {!!selectedObligaciones.length && (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 4 }}>
+                {selectedObligaciones
+                  .sort((a, b) => (a ?? 0) - (b ?? 0))
+                  .map((id) => (
+                    <Tag
+                      key={id}
+                      closable
+                      onClose={(e) => {
+                        e.preventDefault(); // evitar cierre de modal al hacer click
+                        const nextIds = selectedObligaciones.filter((x) => x !== id);
+                        const nextMap = { ...selectedMap };
+                        delete nextMap[id];
+                        setSelectedObligaciones(nextIds);
+                        setSelectedMap(nextMap);
+                      }}
+                    >
+                      {selectedMap[id] || `Obligación ${id}`}
+                    </Tag>
+                  ))}
+              </div>
+            )}
           </div>
         </Form>
       </Modal>
@@ -315,7 +372,12 @@ export default function PerfilesPage() {
         destroyOnHidden
         width={920}
       >
-        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12, gap: 12 }}>
+          <div style={{ fontSize: 12, color: "#888", alignSelf: "center" }}>
+            {selectedObligaciones.length
+              ? `${selectedObligaciones.length} seleccionada(s)`
+              : "Nada seleccionado"}
+          </div>
           <Input.Search
             placeholder="Buscar obligación..."
             allowClear
@@ -332,9 +394,7 @@ export default function PerfilesPage() {
           dataSource={selFiltered}
           rowSelection={{
             type: "checkbox",
-            selectedRowKeys: selectedObligaciones,
-            onChange: (keys) => setSelectedObligaciones(keys),
-            preserveSelectedRowKeys: true,
+            ...rowSelection,
           }}
           pagination={{ pageSize: 8 }}
         />

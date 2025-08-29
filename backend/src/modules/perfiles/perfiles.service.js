@@ -1,48 +1,88 @@
 const { pool } = require('../../config/db');
 const Q = require('./perfiles.queries');
 
-// Listado
+// Listado (paginado + búsqueda)
 async function list({ q, page, pageSize }) {
   const built = Q.list(q, page, pageSize);
   const [rowsRes, countRes] = await Promise.all([
     pool.query(built.data),
     pool.query(built.count)
   ]);
-  return { items: rowsRes.rows, total: countRes.rows[0].total, page: built.page, pageSize: built.pageSize };
-}
-
-// Detalle con asignaciones
-async function getByIdFull(id) {
-  const [p, o, u] = await Promise.all([
-    pool.query(Q.getPerfilById(id)),
-    pool.query(Q.getObligacionesByPerfil(id)),
-    pool.query(Q.getUsersByPerfil(id))
-  ]);
-  if (!p.rows[0]) return null;
   return {
-    perfil: p.rows[0],
-    obligaciones: o.rows.map(r => r.id_obligacion),
-    usuarios: u.rows // {id_user, name, email}
+    items: rowsRes.rows.map(r => ({
+      id: r.id_perfil,
+      perfil: r.perfil,
+      descripcion: r.descripcion
+    })),
+    total: countRes.rows[0].total,
+    page: built.page,
+    pageSize: built.pageSize
   };
 }
 
-// Crear básico
-async function create({ perfil, descripcion_perfil }, userId) {
-  const { rows } = await pool.query(Q.insert(perfil, descripcion_perfil, userId));
-  return rows[0].id_perfil;
+// Detalle con obligaciones relacionadas
+async function getByIdFull(id) {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    const pRes = await client.query(Q.getById(id));
+    if (pRes.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return null;
+    }
+    const p = pRes.rows[0];
+
+    const oblRes = await client.query(Q.getObligacionesByPerfil(id));
+
+    await client.query('COMMIT');
+
+    return {
+      id_perfil: p.id_perfil,
+      perfil: p.perfil,
+      descripcion: p.descripcion,
+      obligaciones: oblRes.rows.map(o => ({
+        id_obligacion: o.id_obligacion,
+        obligacion_contractual: o.obligacion
+      }))
+    };
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw e;
+  } finally {
+    client.release();
+  }
 }
 
-// Actualizar básico
-async function update(id, { perfil, descripcion_perfil }, userId) {
-  await pool.query(Q.update(id, perfil, descripcion_perfil, userId));
+// Crear perfil
+async function create({ perfil, descripcion = '' }, userId = null) {
+  const { rows } = await pool.query(Q.insert({ perfil, descripcion, userId }));
+  const id = rows?.[0]?.id_perfil;
+  if (!id) {
+    const err = new Error('No se pudo obtener id_perfil al crear');
+    err.status = 500;
+    throw err;
+  }
+  return id;
 }
 
-// Eliminar
+// Actualizar perfil
+async function update(id, { perfil, descripcion = '' }, userId = null) {
+  const r = await pool.query(Q.update(id, { perfil, descripcion, userId }));
+  if (r.rowCount === 0) {
+    const err = new Error('Perfil no encontrado');
+    err.status = 404;
+    throw err;
+  }
+  return true;
+}
+
+// Eliminar perfil
 async function remove(id) {
   try {
     await pool.query(Q.remove(id));
   } catch (e) {
-    if (e.code === '23503') {
+    if (e.code === '23503') { // FK referenciada
       e.status = 409;
       e.message = 'No se puede eliminar: el perfil está referenciado.';
     }
@@ -50,26 +90,30 @@ async function remove(id) {
   }
 }
 
-// Reemplazar asignaciones (obligaciones + usuarios) en transacción
-async function updateAssignments(idPerfil, { obligacionesIds = [], usuariosIds = [] }, userId) {
+// Reemplaza asignaciones de obligaciones (y opcionalmente usuarios)
+// ⚠️ En este flujo SOLO procesamos obligaciones; los usuarios se ignoran si el array viene vacío
+async function updateAssignments(idPerfil, { obligacionesIds = [], usuariosIds = [] }, userId = null) {
   const c = await pool.connect();
   try {
     await c.query('BEGIN');
 
-    // Obligaciones: borrar todas e insertar las nuevas
-    await c.query(Q.deletePerfilObligaciones(idPerfil));
-    const bulkOb = Q.bulkInsertPerfilObligaciones(idPerfil, obligacionesIds, userId);
-    if (bulkOb) await c.query(bulkOb);
+    // Limpiar relaciones previas de obligaciones
+    await c.query(Q.deleteObligacionesByPerfil(idPerfil));
 
-    // Usuarios: si viene lista, se limpia a todos excepto esa lista, y se asigna a esa lista
-    if (usuariosIds.length) {
-      const clearExcept = Q.clearUsersExcept(idPerfil, usuariosIds);
-      if (clearExcept) await c.query(clearExcept);
-      const assign = Q.assignUsersToPerfil(idPerfil, usuariosIds);
-      if (assign) await c.query(assign);
-    } else {
-      // lista vacía -> limpiar todos los usuarios que tenían ese perfil
-      await c.query(Q.clearUsersByPerfil(idPerfil));
+    // Insertar nuevas obligaciones (si hay)
+    if (Array.isArray(obligacionesIds) && obligacionesIds.length > 0) {
+      for (const idObl of obligacionesIds) {
+        await c.query(Q.insertPerfilObligacion(idPerfil, idObl, userId));
+      }
+    }
+
+    // Usuarios: solo si realmente viene algo; si no, NO tocamos usuarios
+    if (Array.isArray(usuariosIds) && usuariosIds.length > 0) {
+      const clearQ = Q.clearUsersByPerfil?.(idPerfil);
+      const assignQ = Q.assignUsersToPerfil?.(idPerfil, usuariosIds);
+      // Solo ejecuta si esas funciones existen en queries y devuelven objeto
+      if (clearQ) await c.query(clearQ);
+      if (assignQ) await c.query(assignQ);
     }
 
     await c.query('COMMIT');

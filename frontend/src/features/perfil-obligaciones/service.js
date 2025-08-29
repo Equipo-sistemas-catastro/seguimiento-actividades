@@ -1,93 +1,65 @@
-// src/features/perfil-obligaciones/service.js
+// src/features/perfiles/service.js
 import api from "@/lib/api";
 
-/**
- * Devuelve nombres de perfiles relacionados a una obligación.
- * Intentamos varias rutas para adaptarnos al backend actual sin romper.
- * Retorna: string[] (puede ser [])
- */
-export async function getPerfilesByObligacion(idObligacion) {
-  // Opción 1: endpoint explícito
-  try {
-    const r = await api.get(`/perfil-obligaciones/by-obligacion/${idObligacion}`);
-    const list = Array.isArray(r?.data?.data)
-      ? r.data.data
-      : Array.isArray(r?.data)
-      ? r.data
-      : [];
-    return list
-      .map((x) => x?.perfil || x?.nombre_perfil || x?.perfil_nombre || x?.nombre)
-      .filter(Boolean)
-      .map(String);
-  } catch (_) {}
+/** Normaliza filas desde backend a { id, perfil, descripcion } */
+function normalize(row = {}) {
+  return {
+    id: row.id_perfil ?? row.id ?? null,
+    perfil: row.perfil ?? "",
+    descripcion: row.descripcion ?? "",
+  };
+}
 
-  // Opción 2: query general
-  try {
-    const r = await api.get(`/perfil-obligaciones`, {
-      params: { id_obligacion: idObligacion },
-    });
-    const list = Array.isArray(r?.data?.data)
-      ? r.data.data
-      : Array.isArray(r?.data)
-      ? r.data
-      : [];
-    return list
-      .map((x) => x?.perfil || x?.nombre_perfil || x?.perfil_nombre || x?.nombre)
-      .filter(Boolean)
-      .map(String);
-  } catch (_) {}
-
-  // Opción 3: relaciones colgando de obligaciones
-  try {
-    const r = await api.get(`/obligaciones/${idObligacion}/relations`);
-    const direct =
-      r?.data?.perfil ||
-      r?.data?.perfil_nombre ||
-      r?.data?.nombre_perfil ||
-      r?.data?.nombre;
-    if (direct) return [String(direct)];
-
-    const arr = r?.data?.perfiles || r?.data?.profiles || [];
-    if (Array.isArray(arr) && arr.length) {
-      return arr
-        .map((x) => x?.perfil || x?.nombre)
-        .filter(Boolean)
-        .map(String);
-    }
-  } catch (_) {}
-
+/** Lista de perfiles */
+export async function fetchPerfiles({ q = "", page = 1, pageSize = 100 } = {}) {
+  const { data } = await api.get("/perfiles", { params: { q, page, pageSize } });
+  if (Array.isArray(data?.items)) return data.items.map(normalize);
+  if (Array.isArray(data)) return data.map(normalize);
+  if (Array.isArray(data?.rows)) return data.rows.map(normalize);
   return [];
 }
 
-/**
- * Elimina TODAS las relaciones perfil–obligación de una obligación.
- * Intentamos variantes de endpoint; si la primera falla, probamos otra.
- */
-export async function deleteRelacionesByObligacion(idObligacion) {
-  // Opción 1: DELETE directo
-  try {
-    const r = await api.delete(
-      `/perfil-obligaciones/by-obligacion/${idObligacion}`
-    );
-    return r.data;
-  } catch (_) {}
+/** Crear perfil → retorna SIEMPRE el id del nuevo perfil (uuid/num) */
+export async function createPerfil(body = {}) {
+  const payload = { perfil: body.perfil, descripcion: body.descripcion ?? "" };
+  const { data } = await api.post("/perfiles", payload);
 
-  // Opción 2: DELETE con query/body
-  try {
-    const r = await api.delete(`/perfil-obligaciones`, {
-      data: { id_obligacion: idObligacion },
-    });
-    return r.data;
-  } catch (_) {}
+  const id =
+    data?.id_perfil ??
+    data?.id ??
+    data?.data?.id ??
+    data?.data?.id_perfil ??
+    data?.newId ??
+    data?.insertId ??
+    (typeof data === "string" || typeof data === "number" ? data : null);
 
-  // Opción 3: POST/PUT a una ruta utilitaria
-  try {
-    const r = await api.post(`/perfil-obligaciones/remove-by-obligacion`, {
-      id_obligacion: idObligacion,
-    });
-    return r.data;
-  } catch (e) {
-    // Si nada aplica, dejamos que el backend haga cumplir integridad
-    throw e;
+  if (!id) {
+    const err = new Error("createPerfil no devolvió id");
+    err.response = { data };
+    throw err;
   }
+  return id;
+}
+
+/** Actualizar perfil */
+export async function updatePerfil(id, body = {}) {
+  const payload = { perfil: body.perfil, descripcion: body.descripcion ?? "" };
+  await api.put(`/perfiles/${id}`, payload);
+  return true;
+}
+
+/** Obtener un perfil por id, incluyendo relaciones (obligaciones, usuarios, etc.) */
+export async function fetchPerfilById(id) {
+  const { data } = await api.get(`/perfiles/${id}`);
+  // Esperado: { id_perfil, perfil, descripcion, obligaciones: [{id_obligacion, obligacion_contractual}] ... }
+  return data || null;
+}
+
+/** Guardar asignaciones de obligaciones (y opcional usuarios) del perfil */
+export async function setAsignacionesPerfil(
+  idPerfil,
+  { obligacionesIds = [], usuariosIds = [] } = {}
+) {
+  await api.put(`/perfiles/${idPerfil}/asignaciones`, { obligacionesIds, usuariosIds });
+  return true;
 }

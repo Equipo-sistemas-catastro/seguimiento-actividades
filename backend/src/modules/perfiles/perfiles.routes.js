@@ -3,10 +3,10 @@ const { requireAuth } = require('../../middlewares/auth');
 const { authorize } = require('../../middlewares/authorize');
 const c = require('./perfiles.controller');
 
-// Todas las rutas de Perfiles: JWT + permiso 'PERFILES'
+// Todas las rutas de Perfiles protegidas por JWT y permiso 'PERFILES'
 r.use(requireAuth, authorize('PERFILES'));
 
-// Orden IMPORTA: primero rutas más específicas
+// Rutas (orden importa: específicas primero)
 r.put('/:id/asignaciones', c.updateAssignments);
 
 r.get('/', c.list);
