@@ -9,6 +9,7 @@ router.use('/menu', require('./modules/menu/menu.routes'));
 router.use('/perfiles', require('./modules/perfiles/perfiles.routes'));
 router.use('/obligaciones', require('./modules/obligaciones/obligaciones.routes'));
 router.use('/empleados', require('./modules/empleados/empleados.routes')); // ya existente
-router.use('/componentes', require('./modules/componentes/componentes.routes')); // ⬅️ NUEVO
+router.use('/componentes', require('./modules/componentes/componentes.routes')); // ⬅️ existente
+router.use('/contratos', require('./modules/contratos/contratos.routes')); // ⬅️ NUEVO
 
 module.exports = router;

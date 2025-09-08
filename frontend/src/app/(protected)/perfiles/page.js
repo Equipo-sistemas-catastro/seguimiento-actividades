@@ -12,15 +12,17 @@ import {
   Table,
   Tooltip,
   Typography,
-  Tag,
+  Upload,
+  Alert,
 } from "antd";
-import { PlusOutlined, EditOutlined, LinkOutlined } from "@ant-design/icons";
+import { PlusOutlined, EditOutlined, LinkOutlined, UploadOutlined } from "@ant-design/icons";
 import {
   fetchPerfiles,
   createPerfil,
   updatePerfil,
   fetchPerfilById,
   setAsignacionesPerfil,
+  importObligacionesExcel, // NUEVO
 } from "@/features/perfiles/service";
 import { fetchObligaciones } from "@/features/obligaciones/service";
 
@@ -45,11 +47,13 @@ export default function PerfilesPage() {
   const [selRows, setSelRows] = useState([]);
   const [selQ, setSelQ] = useState("");
 
-  // Selección de obligaciones:
-  // - selectedIds: ids actualmente seleccionados
-  // - selectedMap: { [id]: nombre } para mostrar tags y permitir deseleccionar desde el modal principal
+  // Selección de obligaciones manual
   const [selectedObligaciones, setSelectedObligaciones] = useState([]); // number[]
   const [selectedMap, setSelectedMap] = useState({}); // { [id]: nombre }
+
+  // ----------------- Estado Excel -----------------
+  // fileList controlado para AntD Upload (max 1 archivo)
+  const [excelFiles, setExcelFiles] = useState([]); // [{uid, name, originFileObj, ...}]
 
   // ----------------- Carga de Perfiles -----------------
   const load = async () => {
@@ -80,6 +84,7 @@ export default function PerfilesPage() {
     setEditing(null);
     setSelectedObligaciones([]);
     setSelectedMap({});
+    setExcelFiles([]);
     setOpen(true);
   };
 
@@ -115,14 +120,44 @@ export default function PerfilesPage() {
           setSelectedObligaciones([]);
           setSelectedMap({});
         }
+        setExcelFiles([]); // al editar, limpiamos cualquier archivo previo
       } else {
         form.resetFields();
         setSelectedObligaciones([]);
         setSelectedMap({});
+        setExcelFiles([]);
       }
     })();
   }, [open, editing, form]);
 
+  // ----------------- Excel: Upload control -----------------
+  const beforeUploadExcel = (file) => {
+    const name = (file?.name || "").toLowerCase();
+    const isExcel =
+      name.endsWith(".xlsx") ||
+      name.endsWith(".xls") ||
+      file.type === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
+      file.type === "application/vnd.ms-excel";
+
+    if (!isExcel) {
+      message.error("Formato no soportado. Sube un archivo .xlsx o .xls");
+      return Upload.LIST_IGNORE;
+    }
+
+    setExcelFiles([file]); // max 1
+    message.success(`"${file.name}" listo para importar (reemplazará las relaciones)`);
+    return Upload.LIST_IGNORE; // evita upload automático
+  };
+
+  const onRemoveExcel = () => {
+    setExcelFiles([]);
+    return true;
+  };
+
+  const hasExcel = excelFiles.length > 0;
+  const excelFile = hasExcel ? (excelFiles[0].originFileObj || excelFiles[0]) : null;
+
+  // ----------------- Guardar -----------------
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
@@ -140,13 +175,23 @@ export default function PerfilesPage() {
         throw new Error("El backend no devolvió el id del perfil al guardar.");
       }
 
-      // Paso 2: asignar obligaciones (contrato real del backend)
-      await setAsignacionesPerfil(idPerfil, {
-        obligacionesIds: selectedObligaciones,
-        usuariosIds: [],
-      });
+      // Paso 2: obligaciones
+      if (hasExcel && excelFile) {
+        // Si hay Excel seleccionado → REEMPLAZA relaciones desde backend
+        const stats = await importObligacionesExcel(idPerfil, excelFile);
+        message.success(
+          `Importado desde Excel: ${stats?.relacionesCreadas ?? 0} relaciones nuevas, ` +
+          `${stats?.relacionesEliminadas ?? 0} eliminadas`
+        );
+      } else {
+        // Si NO hay Excel → flujo manual: asignar selección actual
+        await setAsignacionesPerfil(idPerfil, {
+          obligacionesIds: selectedObligaciones,
+          usuariosIds: [],
+        });
+        message.success(editing ? "Perfil actualizado" : "Perfil creado");
+      }
 
-      message.success(editing ? "Perfil actualizado" : "Perfil creado");
       setOpen(false);
       setEditing(null);
       await load();
@@ -163,7 +208,7 @@ export default function PerfilesPage() {
     }
   };
 
-  // ----------------- Selector de Obligaciones -----------------
+  // ----------------- Selector de Obligaciones (modal aparte) -----------------
   const openSelector = async () => {
     setSelOpen(true);
     await loadObligaciones();
@@ -190,24 +235,16 @@ export default function PerfilesPage() {
     return [...rows].sort((a, b) => (a.id ?? 0) - (b.id ?? 0));
   }, [selQ, selRows]);
 
-  // rowSelection: checkbox por fila
+  // rowSelection: checkbox por fila (modal de selector - todas las obligaciones)
   const rowSelection = {
     selectedRowKeys: selectedObligaciones,
     onChange: (keys) => {
-      // Reconstruye el mapa de nombres usando:
-      // - filas actuales del selector (para los recién añadidos)
-      // - y conserva los que ya estaban si siguen seleccionados
       const nextIds = Array.isArray(keys) ? keys : [];
       const nextMap = {};
 
-      // Conserva nombres previos si el id sigue seleccionado
       for (const id of nextIds) {
-        if (selectedMap[id]) {
-          nextMap[id] = selectedMap[id];
-        }
+        if (selectedMap[id]) nextMap[id] = selectedMap[id];
       }
-
-      // Completa nombres faltantes desde las filas visibles
       for (const row of selRows) {
         if (nextIds.includes(row.id) && !nextMap[row.id]) {
           nextMap[row.id] = row.obligacion || `Obligación ${row.id}`;
@@ -220,8 +257,32 @@ export default function PerfilesPage() {
     preserveSelectedRowKeys: true,
   };
 
-  // Columnas del selector (SOLO selección, sin editar)
   const selColumns = [
+    { title: "ID", dataIndex: "id", width: 90 },
+    { title: "Obligación contractual", dataIndex: "obligacion" },
+  ];
+
+  // ----------------- Tabla SOLO con las obligaciones ya relacionadas (en el modal de editar) -----------------
+  const relatedRows = useMemo(() => {
+    // Construye la tabla a partir de la selección actual (solo esas)
+    return selectedObligaciones.map((id) => ({
+      id,
+      obligacion: selectedMap[id] || `Obligación ${id}`,
+    }));
+  }, [selectedObligaciones, selectedMap]);
+
+  const relatedRowSelection = {
+    type: "checkbox",
+    selectedRowKeys: selectedObligaciones, // todas comienzan marcadas
+    onChange: (keys) => {
+      // Al desmarcar, quitamos el id de la selección (se eliminará al guardar)
+      setSelectedObligaciones(Array.isArray(keys) ? keys : []);
+    },
+    getCheckboxProps: () => ({ disabled: hasExcel }), // si hay Excel, deshabilita
+    preserveSelectedRowKeys: true,
+  };
+
+  const relatedColumns = [
     { title: "ID", dataIndex: "id", width: 90 },
     { title: "Obligación contractual", dataIndex: "obligacion" },
   ];
@@ -246,7 +307,6 @@ export default function PerfilesPage() {
               onClick={() => handleEdit(record)}
             />
           </Tooltip>
-          {/* 🔒 Sin eliminar por política */}
         </Space>
       ),
     },
@@ -307,6 +367,7 @@ export default function PerfilesPage() {
         confirmLoading={saving}
         onCancel={() => { setOpen(false); setEditing(null); }}
         destroyOnHidden
+        width={920}
       >
         <Form form={form} layout="vertical">
           <Form.Item
@@ -320,42 +381,70 @@ export default function PerfilesPage() {
             <Input.TextArea rows={3} />
           </Form.Item>
 
-          {/* Relacionar obligaciones */}
+          {/* Aviso sobre prioridad de Excel */}
+          <Alert
+            type={hasExcel ? "warning" : "info"}
+            showIcon
+            style={{ marginBottom: 12 }}
+            message={
+              hasExcel
+                ? "Se importará desde Excel y se REEMPLAZARÁN las obligaciones relacionadas con este perfil."
+                : "Opcional: puedes relacionar obligaciones manualmente o cargar un Excel para reemplazarlas."
+            }
+          />
+
+          {/* Cargar Excel */}
+          <Form.Item label="Cargar obligaciones desde Excel (.xlsx / .xls)">
+            <Upload
+              beforeUpload={beforeUploadExcel}
+              onRemove={onRemoveExcel}
+              fileList={excelFiles}
+              accept=".xlsx,.xls,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              maxCount={1}
+            >
+              <Button icon={<UploadOutlined />}>Seleccionar archivo</Button>
+            </Upload>
+            <div style={{ marginTop: 8, color: "#888", fontSize: 12 }}>
+              Se tomará la <b>primera fila</b> como encabezado y se leerá la <b>primera columna</b> como lista de obligaciones.
+            </div>
+          </Form.Item>
+
+          {/* Botón para abrir el selector (todas las obligaciones) */}
           <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
             <Space>
               <Tooltip title="Selecciona una o varias obligaciones para asociarlas a este perfil">
-                <Button icon={<LinkOutlined />} onClick={openSelector}>
+                <Button icon={<LinkOutlined />} onClick={openSelector} disabled={hasExcel}>
                   Relacionar obligación contractual
                 </Button>
               </Tooltip>
-              <span style={{ color: "#888" }}>
-                {selectedObligaciones.length
-                  ? `${selectedObligaciones.length} obligación(es) seleccionada(s)`
-                  : "Sin obligaciones seleccionadas"}
+              <span style={{ color: hasExcel ? "#faad14" : "#888" }}>
+                {hasExcel
+                  ? "Se ignorará la selección manual porque hay un Excel cargado"
+                  : selectedObligaciones.length
+                    ? `${selectedObligaciones.length} obligación(es) seleccionada(s)`
+                    : "Sin obligaciones seleccionadas"}
               </span>
             </Space>
 
-            {/* Listado de obligaciones seleccionadas como tags (se pueden deseleccionar) */}
-            {!!selectedObligaciones.length && (
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 4 }}>
-                {selectedObligaciones
-                  .sort((a, b) => (a ?? 0) - (b ?? 0))
-                  .map((id) => (
-                    <Tag
-                      key={id}
-                      closable
-                      onClose={(e) => {
-                        e.preventDefault(); // evitar cierre de modal al hacer click
-                        const nextIds = selectedObligaciones.filter((x) => x !== id);
-                        const nextMap = { ...selectedMap };
-                        delete nextMap[id];
-                        setSelectedObligaciones(nextIds);
-                        setSelectedMap(nextMap);
-                      }}
-                    >
-                      {selectedMap[id] || `Obligación ${id}`}
-                    </Tag>
-                  ))}
+            {/* SOLO EN EDITAR: Tabla con las obligaciones YA RELACIONADAS (con checkboxes) */}
+            {editing && (
+              <div style={{ marginTop: 8 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+                  <b>Obligaciones actualmente relacionadas</b>
+                </div>
+                <Table
+                  rowKey="id"
+                  size="small"
+                  columns={[
+                    { title: "ID", dataIndex: "id", width: 90 },
+                    { title: "Obligación contractual", dataIndex: "obligacion" },
+                  ]}
+                  dataSource={relatedRows}
+                  rowSelection={relatedRowSelection}
+                  pagination={{ pageSize: 7 }}
+                  scroll={{ y: 260 }}
+                  style={hasExcel ? { opacity: 0.6, pointerEvents: "none" } : {}}
+                />
               </div>
             )}
           </div>
@@ -390,12 +479,9 @@ export default function PerfilesPage() {
         <Table
           rowKey="id"
           loading={selLoading}
-          columns={selColumns}
+          columns={[{ title: "ID", dataIndex: "id", width: 90 }, { title: "Obligación contractual", dataIndex: "obligacion" }]}
           dataSource={selFiltered}
-          rowSelection={{
-            type: "checkbox",
-            ...rowSelection,
-          }}
+          rowSelection={{ type: "checkbox", selectedRowKeys: selectedObligaciones, onChange: rowSelection.onChange, preserveSelectedRowKeys: true }}
           pagination={{ pageSize: 8 }}
         />
       </Modal>

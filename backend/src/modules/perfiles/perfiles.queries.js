@@ -123,11 +123,35 @@ function insertPerfilObligacion(idPerfil, idObligacion, userId = null) {
   };
 }
 
+// ---------- Excel helpers ----------
+
+// Buscar obligacion por texto normalizado
+function findObligacionByText(obligacionTxt) {
+  return {
+    name: 'obl_find_by_text',
+    text: `
+      SELECT id_obligacion
+      FROM tbl_obligacion_contractual
+      WHERE LOWER(TRIM(obligacion_contractual)) = LOWER(TRIM($1))
+      LIMIT 1;`,
+    values: [obligacionTxt]
+  };
+}
+
+// Insertar obligacion y retornar id
+function insertObligacion(obligacionTxt, userId = null) {
+  return {
+    name: 'obl_insert',
+    text: `
+      INSERT INTO tbl_obligacion_contractual (obligacion_contractual, id_user_auditoria, fecha_auditoria)
+      VALUES ($1, $2, NOW())
+      RETURNING id_obligacion;`,
+    values: [obligacionTxt, userId]
+  };
+}
+
 /**
  * Opcional: asignación de usuarios a un perfil
- * (solo se ejecuta si el service recibe usuariosIds.length > 0)
- * Si tu tabla tbl_users NO tiene id_perfil, puedes eliminar estas funciones
- * o dejarlas sin uso (no se ejecutarán).
  */
 function clearUsersByPerfil(idPerfil) {
   return {
@@ -154,6 +178,10 @@ module.exports = {
   remove,
   deleteObligacionesByPerfil,
   insertPerfilObligacion,
+  // Excel helpers
+  findObligacionByText,
+  insertObligacion,
+  // Opcional users
   clearUsersByPerfil,
   assignUsersToPerfil
 };

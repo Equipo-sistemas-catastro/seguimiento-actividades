@@ -8,12 +8,11 @@ async function list(req, res, next) {
       page: req.query.page,
       pageSize: req.query.pageSize
     });
-    // Puedes responder array o {items,total,...}; dejamos estándar del repo:
     res.json(data);
   } catch (e) { next(e); }
 }
 
-// GET /api/perfiles/:id  -> devuelve perfil + obligaciones
+// GET /api/perfiles/:id -> perfil + obligaciones
 async function get(req, res, next) {
   try {
     const id = Number(req.params.id);
@@ -29,7 +28,7 @@ async function create(req, res, next) {
     const { perfil, descripcion } = req.body || {};
     if (!perfil) return res.status(400).json({ error: 'perfil es requerido' });
 
-    const userId = req.user?.id || null; // auditoría
+    const userId = req.user?.id || null;
     const id = await svc.create({ perfil, descripcion }, userId);
     res.json({ id_perfil: id });
   } catch (e) { next(e); }
@@ -49,7 +48,7 @@ async function update(req, res, next) {
 }
 
 // PUT /api/perfiles/:id/asignaciones
-// Body esperado: { obligacionesIds: number[], usuariosIds?: [] }  ← usuariosIds se ignora si viene vacío
+// Body: { obligacionesIds: number[], usuariosIds?: uuid[] }
 async function updateAssignments(req, res, next) {
   try {
     const idPerfil = Number(req.params.id);
@@ -61,6 +60,21 @@ async function updateAssignments(req, res, next) {
   } catch (e) { next(e); }
 }
 
+// POST /api/perfiles/:id/obligaciones-excel  (multipart, campo 'file')
+// Reemplaza TODAS las relaciones del perfil con las obligaciones del Excel
+async function importObligExcel(req, res, next) {
+  try {
+    const idPerfil = Number(req.params.id);
+    const file = req.file;
+    if (!file || !file.buffer) {
+      return res.status(400).json({ error: 'Archivo Excel requerido (campo "file")' });
+    }
+    const userId = req.user?.id || null;
+    const result = await svc.importObligacionesFromExcel(idPerfil, file.buffer, userId);
+    res.json(result);
+  } catch (e) { next(e); }
+}
+
 // DELETE /api/perfiles/:id
 async function remove(req, res, next) {
   try {
@@ -69,4 +83,6 @@ async function remove(req, res, next) {
   } catch (e) { next(e); }
 }
 
-module.exports = { list, get, create, update, updateAssignments, remove };
+module.exports = {
+  list, get, create, update, updateAssignments, importObligExcel, remove
+};

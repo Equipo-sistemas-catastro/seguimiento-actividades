@@ -35,7 +35,6 @@ export async function createPerfil(body = {}) {
     (typeof data === "string" || typeof data === "number" ? data : null);
 
   if (!id) {
-    // devolvemos la data para debug pero indicamos claramente que no hubo id
     const err = new Error("createPerfil no devolvió id");
     err.response = { data };
     throw err;
@@ -65,4 +64,20 @@ export async function setAsignacionesPerfil(
 ) {
   await api.put(`/perfiles/${idPerfil}/asignaciones`, { obligacionesIds, usuariosIds });
   return true;
+}
+
+/** NUEVO: Importar obligaciones desde Excel (reemplaza relaciones del perfil) */
+export async function importObligacionesExcel(idPerfil, file) {
+  const fd = new FormData();
+  fd.append("file", file); // campo esperado por el backend
+
+  const { data } = await api.post(
+    `/perfiles/${idPerfil}/obligaciones-excel`,
+    fd,
+    {
+      headers: { "Content-Type": "multipart/form-data" },
+    }
+  );
+  // data típico: { ok, relacionesEliminadas, obligacionesCreadas, relacionesCreadas }
+  return data;
 }

@@ -20,7 +20,7 @@ export default function ProtectedLayout({ children }) {
   const [collapsed, setCollapsed] = useState(false);
   const [user, setUser] = useState(null);
 
-  const [menuLoading, setMenuLoading] = useState(true);
+  const [menuLoading, setMenuLoading] = useState(false);
   const [menuItems, setMenuItems] = useState([]);
 
   // Guard + usuario
@@ -29,15 +29,18 @@ export default function ProtectedLayout({ children }) {
     (async () => {
       try {
         const t = getToken();
-        if (!t) return router.replace("/login?next=" + encodeURIComponent(pathname));
+        if (!t) {
+          router.replace("/login?next=" + encodeURIComponent(pathname));
+          return;
+        }
+        setChecking(true);
         const { data } = await api.get("/auth/me");
         if (alive) setUser(data || null);
       } catch (e) {
-        if (e?.response?.status === 401) {
-          clearToken();
-          return router.replace("/login?next=" + encodeURIComponent(pathname));
-        }
-        console.warn("Auth check:", e?.message || e);
+        // Tratar cualquier fallo como no-autenticado
+        clearToken();
+        router.replace("/login?next=" + encodeURIComponent(pathname));
+        return;
       } finally {
         if (alive) setChecking(false);
       }
@@ -48,6 +51,11 @@ export default function ProtectedLayout({ children }) {
   // Cargar menú dinámico desde /menu/my  → { items: [...] }
   useEffect(() => {
     if (checking) return;
+
+    // ⬇⬇ EVITA cargar menú si NO hay token (previene 401 y logs en consola)
+    const t = getToken();
+    if (!t) return;
+
     let alive = true;
     (async () => {
       try {
@@ -71,7 +79,7 @@ export default function ProtectedLayout({ children }) {
               key: m.code,
               icon,
               label: m.label,
-              onClick: () => router.push(href),
+              onClick: () => href && router.push(href),
             };
           });
 
@@ -94,7 +102,16 @@ export default function ProtectedLayout({ children }) {
 
         if (alive) setMenuItems(items);
       } catch (e) {
-        console.error("Error cargando menú:", e?.response?.data || e?.message || e);
+        const status = e?.response?.status;
+
+        // ⬇⬇ Silenciar 401/403 (esperado si no hay sesión)
+        if (status === 401 || status === 403) return;
+
+        // Otros errores: warning + fallback mínimo
+        if (process.env.NODE_ENV !== "production") {
+          // eslint-disable-next-line no-console
+          console.debug("Menú: no se pudo cargar", e?.response?.data || e?.message || e);
+        }
         message.warning("No se pudo cargar el menú. Usando predeterminado.");
         if (alive) {
           setMenuItems([
@@ -106,6 +123,7 @@ export default function ProtectedLayout({ children }) {
         if (alive) setMenuLoading(false);
       }
     })();
+
     return () => { alive = false; };
   }, [checking, router, message]);
 
