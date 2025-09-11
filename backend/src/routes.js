@@ -11,5 +11,6 @@ router.use('/obligaciones', require('./modules/obligaciones/obligaciones.routes'
 router.use('/empleados', require('./modules/empleados/empleados.routes')); // ya existente
 router.use('/componentes', require('./modules/componentes/componentes.routes')); // ⬅️ existente
 router.use('/contratos', require('./modules/contratos/contratos.routes')); // ⬅️ NUEVO
+router.use('/requerimientos', require('./modules/requerimientos/requerimientos.routes')); // ⬅️ NUEVO
 
 module.exports = router;

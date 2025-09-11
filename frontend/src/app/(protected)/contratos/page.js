@@ -390,7 +390,7 @@ export default function ContratosPage() {
         </div>
 
         <Paragraph style={{ marginTop: 0 }}>
-          Administra los contratos laborales. No se permite eliminación.
+          Administra los contratos laborales.
         </Paragraph>
 
         <Table

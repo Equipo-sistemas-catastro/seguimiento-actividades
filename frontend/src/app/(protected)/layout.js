@@ -170,7 +170,7 @@ export default function ProtectedLayout({ children }) {
             paddingInline: 16,
           }}
         >
-          <Title level={5} style={{ margin: 0 }}>Seguimiento Actividades</Title>
+          <Title level={5} style={{ margin: 0, fontSize: 20 }}>Aplicación de seguimiento de actividades</Title>
 
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <UserOutlined />
