@@ -12,5 +12,9 @@ router.use('/empleados', require('./modules/empleados/empleados.routes')); // ya
 router.use('/componentes', require('./modules/componentes/componentes.routes')); // ⬅️ existente
 router.use('/contratos', require('./modules/contratos/contratos.routes')); // ⬅️ NUEVO
 router.use('/requerimientos', require('./modules/requerimientos/requerimientos.routes')); // ⬅️ NUEVO
+router.use('/mis-requerimientos', require('./modules/mis-requerimientos/mis-requerimientos.routes')); // SOLO asignados
+
+// ⬇️ NUEVO: actividades
+router.use('/actividades', require('./modules/actividades/actividades.routes'));
 
 module.exports = router;
