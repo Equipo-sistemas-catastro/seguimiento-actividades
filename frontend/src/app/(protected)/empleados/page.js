@@ -139,7 +139,7 @@ export default function EmpleadosPage() {
   const handleEdit = async (row) => {
     setEditingRow(row);
 
-    setOpen(true);             // abrir primero
+    setOpen(true);
     form.resetFields();
     form.setFieldsValue({
       cedula: row.cedula ?? "",
@@ -154,6 +154,7 @@ export default function EmpleadosPage() {
     });
     setEstadoForm(row.estado ?? "activo");
 
+    // cargar catálogos del propio módulo
     try {
       const [perfiles, componentes] = await Promise.all([fetchPerfilesAll(), fetchComponentesAll()]);
       setPerfilesOpts(perfiles);
@@ -162,6 +163,7 @@ export default function EmpleadosPage() {
       console.warn("Catálogos:", e?.response?.data || e);
     }
 
+    // cargar detalle para setear ids activos
     try {
       const id = row.id ?? row.id_empleado;
       const detail = await getEmpleadoDetalle(id);

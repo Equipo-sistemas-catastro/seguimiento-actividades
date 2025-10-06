@@ -212,6 +212,54 @@ function deleteActividadObligaciones(id_actividad) {
   };
 }
 
+/** =========================================================
+ * 🔸 NUEVO: Listado Kanban de "Mis actividades" (sin id_req)
+ * Reglas exactas:
+ *  - POR HACER (1): todas
+ *  - EN EJECUCIÓN (2) y FINALIZADA (3): solo si fecha_fin_programada >= primer día del mes actual
+ * Flags:
+ *  - incumplida: estado=2 AND fecha_fin_programada < CURRENT_DATE
+ *  - finalizada_incumplida: estado=3 AND fecha_fin_actividad < fecha_fin_programada
+ * Incluye descripcion del requerimiento para pintar la card.
+ * ========================================================= */
+function listMisActividadesKanban(id_empleado) {
+  return {
+    text: `
+      WITH base AS (
+        SELECT
+          a.id_actividad,
+          a.actividad,
+          a.fecha_inicio_actividad,
+          a.fecha_fin_programada,
+          a.fecha_fin_actividad,
+          a.id_estado,
+          e.estado AS nombre_estado,
+          a.id_req,
+          r.descripcion_req
+        FROM tbl_actividades a
+        JOIN tbl_estados e ON e.id_estado = a.id_estado
+        LEFT JOIN tbl_requerimiento r ON r.id_req = a.id_req
+        WHERE a.id_empleado = $1
+          AND (
+            a.id_estado = 1
+            OR (a.id_estado IN (2,3)
+                AND a.fecha_fin_programada >= date_trunc('month', CURRENT_DATE)::date)
+          )
+      )
+      SELECT
+        b.*,
+        (b.id_estado = 2 AND b.fecha_fin_programada < CURRENT_DATE)::boolean AS incumplida,
+        (
+          b.id_estado = 3
+          AND b.fecha_fin_actividad IS NOT NULL
+          AND b.fecha_fin_actividad < b.fecha_fin_programada
+        )::boolean AS finalizada_incumplida
+      FROM base b
+      ORDER BY b.id_estado, b.fecha_fin_programada DESC, b.id_actividad DESC;`,
+    values: [id_empleado],
+  };
+}
+
 module.exports = {
   empleadoIdByUserId,
   getReqCore,
@@ -225,4 +273,6 @@ module.exports = {
   actividadCore,
   updateActividadBasic,
   deleteActividadObligaciones, // nuevo
+  // kanban
+  listMisActividadesKanban,
 };

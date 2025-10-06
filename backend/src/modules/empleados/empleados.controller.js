@@ -112,6 +112,25 @@ class EmpleadosController {
       return res.status(400).json({ message: err.message });
     }
   }
+
+  // ====== NUEVO: Catálogos internos del módulo ======
+  static async catalogPerfiles(req, res) {
+    try {
+      const items = await EmpleadosService.listarPerfilesAll();
+      res.json({ data: items });
+    } catch (err) {
+      res.status(500).json({ message: err.message });
+    }
+  }
+
+  static async catalogComponentes(req, res) {
+    try {
+      const items = await EmpleadosService.listarComponentesAll();
+      res.json({ data: items });
+    } catch (err) {
+      res.status(500).json({ message: err.message });
+    }
+  }
 }
 
 module.exports = EmpleadosController;

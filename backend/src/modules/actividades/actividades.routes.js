@@ -10,21 +10,25 @@ r.use(requireAuth);
 // --- Catálogos (sin authorize, alineado a /requerimientos/catalogos/estados) ---
 r.get('/catalogos/mis-obligaciones', c.listMisObligaciones);
 
-// --- Acciones protegidas por menú MIS_REQUERIMIENTOS ---
-r.use(authorize('MIS_REQUERIMIENTOS'));
+// ---- Subrouter con TODOS los endpoints protegidos ----
+const secured = require('express').Router();
 
-// Crear actividad (para requerimiento asignado y no finalizado)
-r.post('/', c.create);
+// Crear actividad
+secured.post('/', c.create);
 
-// ===== NUEVO =====
-// Lista actividades del empleado logueado para un requerimiento
-// GET /api/actividades/mis?id_req=123
-r.get('/mis', c.listMisActividades);
+// Lista actividades del empleado logueado
+// - Si viene ?id_req=<> -> lista por requerimiento
+// - Si NO viene -> Kanban "Mis actividades"
+secured.get('/mis', c.listMisActividades);
 
-// Detalle de una actividad (restringido al empleado)
-r.get('/:id', c.getActividadById);
+// Detalle de una actividad
+secured.get('/:id', c.getActividadById);
 
-// Actualizar una actividad (solo básicos: desc, fechas, estado)
-r.put('/:id', c.updateActividad);
+// Actualizar una actividad
+secured.put('/:id', c.updateActividad);
+
+// Montamos el MISMO subrouter con dos autorizaciones diferentes (OR lógico por duplicidad)
+r.use(authorize('MIS_ACTIVIDADES'), secured);
+r.use(authorize('MIS_REQUERIMIENTOS'), secured);
 
 module.exports = r;

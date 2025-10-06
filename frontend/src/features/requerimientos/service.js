@@ -144,7 +144,7 @@ export async function createActividad({ id_req, actividad, fecha_inicio_activida
   return data; // { ok: true, id_actividad }
 }
 
-/* ====== NUEVO: listar / leer / actualizar actividades del empleado ====== */
+/* ====== listar / leer / actualizar actividades del empleado ====== */
 
 // Lista actividades del empleado logueado para un requerimiento
 export async function listMisActividades({ id_req }) {
@@ -161,7 +161,8 @@ export async function listMisActividades({ id_req }) {
 export async function fetchActividadById(id_actividad) {
   if (!id_actividad) return null;
   const { data } = await api.get(`/actividades/${id_actividad}`);
-  return data || null;
+  // << Fix: si el backend envía {ok, item}, devolvemos item; si no, devolvemos data.
+  return (data?.item ?? data?.data ?? data) || null;
 }
 
 // Actualizar actividad (solo campos básicos)

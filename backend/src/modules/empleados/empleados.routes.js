@@ -6,6 +6,10 @@ const c = require('./empleados.controller');
 // Protegido igual que Perfiles (código de menú: EMPLEADOS)
 r.use(requireAuth, authorize('EMPLEADOS'));
 
+// === Catálogos propios del módulo Empleados ===
+r.get('/catalogos/perfiles', c.catalogPerfiles);
+r.get('/catalogos/componentes', c.catalogComponentes);
+
 // Listado / Crear / Detalle / Editar / Asignaciones
 r.get('/', c.list);
 r.post('/', c.create);

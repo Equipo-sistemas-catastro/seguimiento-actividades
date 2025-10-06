@@ -133,18 +133,13 @@ export async function updateEmpleado(id, payload) {
   return normalizeEmpleado(updated);
 }
 
-/** ===== Catálogos (cargar TODO para selects) ===== */
+/** ===== Catálogos (cargar TODO para selects) =====
+ *  Ahora se consultan catálogos propios del módulo EMPLEADOS,
+ *  así no dependemos de permisos de otros menús.
+ */
 export async function fetchPerfilesAll() {
-  const { data } = await api.get("/perfiles", {
-    params: { page: 1, pageSize: 500 },
-  });
-  const rows = Array.isArray(data?.items)
-    ? data.items
-    : Array.isArray(data?.data)
-    ? data.data
-    : Array.isArray(data)
-    ? data
-    : [];
+  const { data } = await api.get("/empleados/catalogos/perfiles");
+  const rows = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
   return rows.map((r) => ({
     id: Number(r.id_perfil ?? r.id),
     label: r.perfil,
@@ -153,16 +148,8 @@ export async function fetchPerfilesAll() {
 }
 
 export async function fetchComponentesAll() {
-  const { data } = await api.get("/componentes", {
-    params: { page: 1, pageSize: 500, sortBy: "componente", sortDir: "asc" },
-  });
-  const rows = Array.isArray(data?.items)
-    ? data.items
-    : Array.isArray(data?.data)
-    ? data.data
-    : Array.isArray(data)
-    ? data
-    : [];
+  const { data } = await api.get("/empleados/catalogos/componentes");
+  const rows = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
   return rows.map((r) => ({
     id: Number(r.id_componente ?? r.id),
     label: r.componente,

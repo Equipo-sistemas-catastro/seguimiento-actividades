@@ -134,6 +134,18 @@ const GET_COMPONENTES_HISTORIAL = `
   ORDER BY ec.fecha_inicio DESC
 `;
 
+// ---------- NUEVO: catálogos completos
+const GET_PERFILES_ALL = `
+  SELECT id_perfil, perfil
+  FROM tbl_perfiles
+  ORDER BY perfil ASC
+`;
+const GET_COMPONENTES_ALL = `
+  SELECT id_componente, componente
+  FROM tbl_componentes
+  ORDER BY componente ASC
+`;
+
 // ---------- UPDATE empleado
 const UPDATABLE_FIELDS = new Set([
   'cedula_empleado','primer_nombre_empl','segundo_nombre_empl',
@@ -204,7 +216,6 @@ module.exports = {
   GET_COMPONENTES_ACTIVOS,
   GET_COMPONENTES_HISTORIAL,
   buildUpdateEmpleadoQuery,
-  // asignaciones:
   VERIFY_EMPLEADO_ACTIVO,
   VERIFY_PERFIL_EXISTS,
   CLOSE_PERFIL_ACTIVO,
@@ -212,4 +223,7 @@ module.exports = {
   VERIFY_COMPONENTE_EXISTS,
   CLOSE_COMPONENTE_ACTIVO,
   INSERT_EMPL_COMPONENTE,
+  // nuevos:
+  GET_PERFILES_ALL,
+  GET_COMPONENTES_ALL,
 };

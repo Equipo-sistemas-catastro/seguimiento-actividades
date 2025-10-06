@@ -16,6 +16,9 @@ const {
   VERIFY_COMPONENTE_EXISTS,
   CLOSE_COMPONENTE_ACTIVO,
   INSERT_EMPL_COMPONENTE,
+  // nuevos:
+  GET_PERFILES_ALL,
+  GET_COMPONENTES_ALL,
 } = require('./empleados.queries');
 
 class EmpleadosService {
@@ -139,6 +142,16 @@ class EmpleadosService {
     } finally {
       client.release();
     }
+  }
+
+  // ===== NUEVOS: Catálogos =====
+  static async listarPerfilesAll() {
+    const { rows } = await pool.query(GET_PERFILES_ALL);
+    return rows;
+  }
+  static async listarComponentesAll() {
+    const { rows } = await pool.query(GET_COMPONENTES_ALL);
+    return rows;
   }
 }
 

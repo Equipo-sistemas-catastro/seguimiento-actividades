@@ -17,24 +17,26 @@ async function create(req, res, next) {
 async function listMisObligaciones(req, res, next) {
   try {
     const userId = req.user?.id || null;
-    const rows = await svc.listMisObligaciones(userId);
-    res.json(rows);
+    const items = await svc.listMisObligaciones(userId);
+    res.json({ ok: true, items });
   } catch (e) {
     next(e);
   }
 }
 
-// ===== NUEVOS =====
-
-// GET /api/actividades/mis?id_req=123
+// GET /api/actividades/mis (?id_req=123 opcional)
+// Si viene id_req: lista actividades del empleado para ese requerimiento.
+// Si NO viene id_req: retorna el Kanban de "Mis actividades" con las reglas pedidas.
 async function listMisActividades(req, res, next) {
   try {
     const userId = req.user?.id || null;
-    const id_req = Number(req.query?.id_req);
-    if (!id_req) return res.status(400).json({ error: 'id_req es obligatorio' });
-    const rows = await svc.listMisActividades(userId, id_req);
-    // Devuelvo un array simple (el frontend soporta array o {items})
-    res.json(rows);
+    const id_req =
+      req.query.id_req !== undefined
+        ? req.query.id_req
+        : (req.query.idReq !== undefined ? req.query.idReq : undefined);
+
+    const items = await svc.listMisActividades(userId, id_req);
+    res.json({ ok: true, items });
   } catch (e) {
     next(e);
   }
@@ -44,23 +46,35 @@ async function listMisActividades(req, res, next) {
 async function getActividadById(req, res, next) {
   try {
     const userId = req.user?.id || null;
-    const id_actividad = Number(req.params.id);
-    const row = await svc.getActividadById(userId, id_actividad);
-    if (!row) return res.status(404).json({ error: 'Actividad no encontrada' });
-    res.json(row);
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) {
+      const err = new Error('El id de la actividad debe ser numérico');
+      err.status = 400; throw err;
+    }
+    const row = await svc.getActividadById(userId, id);
+    if (!row) {
+      const err = new Error('Actividad no encontrada');
+      err.status = 404; throw err;
+    }
+    res.json({ ok: true, item: row });
   } catch (e) {
     next(e);
   }
 }
 
 // PUT /api/actividades/:id
+// Reglas de negocio (finalización, bloqueos, validaciones) están en el service.
 async function updateActividad(req, res, next) {
   try {
     const userId = req.user?.id || null;
     const id_actividad = Number(req.params.id);
+    if (!Number.isFinite(id_actividad)) {
+      const err = new Error('El id de la actividad debe ser numérico');
+      err.status = 400; throw err;
+    }
     const body = req.body || {};
-    await svc.updateActividad(userId, id_actividad, body);
-    res.json({ ok: true, id_actividad });
+    const out = await svc.updateActividad(userId, id_actividad, body);
+    res.json({ ok: true, id_actividad: out.id_actividad });
   } catch (e) {
     next(e);
   }

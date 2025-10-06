@@ -18,13 +18,11 @@ function ymdFrom(input) {
   }
   return null;
 }
-
 function dayNum(ymd) {
-  if (!ymd) return NaN;
-  const [y, m, d] = ymd.split('-').map(Number);
-  return Date.UTC(y, m - 1, d) / 86400000;
+  if (!ymd || !/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return NaN;
+  const [Y, M, D] = ymd.split('-').map(Number);
+  return Date.UTC(Y, M - 1, D) / 86400000;
 }
-
 function isValidYMD(s) {
   return typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
 }
@@ -86,60 +84,61 @@ async function create(payload = {}, userId = null) {
 
   if (!userId) { const e = new Error('Usuario no autenticado'); e.status = 401; throw e; }
   if (!id_req || !Number.isFinite(Number(id_req))) { const e = new Error('id_req es obligatorio y debe ser numérico'); e.status = 400; throw e; }
-  if (!actividad || !actividad.trim()) { const e = new Error('El campo "actividad" es obligatorio'); e.status = 400; throw e; }
-
-  const fiActY = ymdFrom(fecha_inicio_actividad);
-  const ffProgY = ymdFrom(fecha_fin_programada);
-  if (!isValidYMD(fiActY) || !isValidYMD(ffProgY)) {
-    const e = new Error('Fechas inválidas, usa formato YYYY-MM-DD'); e.status = 400; throw e;
-  }
-
-  if (!Array.isArray(obligaciones) || obligaciones.length === 0) {
-    const e = new Error('Debes seleccionar al menos una obligación contractual'); e.status = 400; throw e;
-  }
 
   const id_empleado = await getEmpleadoIdOrThrow(userId);
 
+  // Verificar requerimiento activo
   const reqRs = await pool.query(Q.getReqCore(Number(id_req)));
   const reqRow = reqRs.rows?.[0] || null;
   if (!reqRow) { const e = new Error('Requerimiento no encontrado'); e.status = 404; throw e; }
   if (Number(reqRow.id_estado) === 3) {
-    const e = new Error('El requerimiento está Finalizado; no permite crear actividades');
-    e.status = 409; throw e;
+    const e = new Error('El requerimiento está Finalizado; no permite crear actividades'); e.status = 409; throw e;
   }
 
+  // Verificar asignación del requerimiento al empleado
   const chk = await pool.query(Q.checkEmpleadoAsignado(Number(id_req), id_empleado));
   if (!chk.rows?.[0]) { const e = new Error('El requerimiento no está asignado a este empleado'); e.status = 403; throw e; }
 
+  // Validar fechas con reglas de negocio
+  const fiActY = ymdFrom(fecha_inicio_actividad);
+  const ffProgY = ymdFrom(fecha_fin_programada);
   validateFechasActividad({ reqRow, fecha_inicio_actividad: fiActY, fecha_fin_programada: ffProgY });
 
-  const oblRs = await pool.query(Q.obligacionesByEmpleadoActivo(id_empleado));
-  const oblPermitidas = new Set(oblRs.rows.map(r => Number(r.id_obligacion)));
-  const noPermitidas = (obligaciones || []).map(Number).filter(id => !oblPermitidas.has(id));
-  if (noPermitidas.length) { const e = new Error('Una o más obligaciones no pertenecen al perfil ACTIVO del empleado'); e.status = 400; throw e; }
-
-  // Si estado = 3, debe fijarse fecha_fin_actividad = hoy (YYYY-MM-DD)
-  const fecha_fin_actividad = (Number(id_estado) === 3) ? ymdFrom(new Date()) : null;
+  // Validar obligaciones (si vienen)
+  let obligacionesIds = [];
+  if (Array.isArray(obligaciones)) {
+    if (obligaciones.length === 0) {
+      const e = new Error('Debes seleccionar al menos una obligación contractual'); e.status = 400; throw e;
+    }
+    const oblRs = await pool.query(Q.obligacionesByEmpleadoActivo(id_empleado));
+    const permitidas = new Set(oblRs.rows.map(r => Number(r.id_obligacion)));
+    obligacionesIds = obligaciones.map(Number);
+    const invalidas = obligacionesIds.filter(o => !permitidas.has(o));
+    if (invalidas.length) {
+      const e = new Error('Una o más obligaciones no pertenecen al perfil ACTIVO del empleado'); e.status = 400; throw e;
+    }
+  }
 
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
 
     const ins = await client.query(Q.insertActividad({
-      actividad: actividad.trim(),
+      actividad: (actividad || '').trim(),
       fecha_inicio_actividad: fiActY,
       fecha_fin_programada: ffProgY,
-      fecha_fin_actividad, // <- NUEVO
+      fecha_fin_actividad: null, // al crear no hay fecha de cierre
       id_req: Number(id_req),
       id_empleado,
       id_estado: Number(id_estado) || 1,
       userId,
     }));
-
     const id_actividad = ins.rows?.[0]?.id_actividad;
-    if (!id_actividad) throw new Error('No se obtuvo id_actividad al insertar');
+    if (!id_actividad) { throw new Error('No se pudo crear la actividad'); }
 
-    await client.query(Q.insertActividadObligaciones(id_actividad, obligaciones.map(Number), userId));
+    if (obligacionesIds.length) {
+      await client.query(Q.insertActividadObligaciones(id_actividad, obligacionesIds, userId));
+    }
 
     await client.query('COMMIT');
     return { id_actividad };
@@ -151,7 +150,7 @@ async function create(payload = {}, userId = null) {
   }
 }
 
-/** =========================== READS =========================== */
+/** ======================= CATÁLOGO OBLIGACIONES ======================= */
 async function listMisObligaciones(userId = null) {
   if (!userId) { const e = new Error('Usuario no autenticado'); e.status = 401; throw e; }
   const id_empleado = await getEmpleadoIdOrThrow(userId);
@@ -159,10 +158,19 @@ async function listMisObligaciones(userId = null) {
   return rows || [];
 }
 
+/** ============================= LISTAR ============================= */
 async function listMisActividades(userId = null, id_req) {
   if (!userId) { const e = new Error('Usuario no autenticado'); e.status = 401; throw e; }
   const id_empleado = await getEmpleadoIdOrThrow(userId);
-  const { rows } = await pool.query(Q.actividadesByReqEmpleado(Number(id_req), id_empleado));
+
+  // Si viene id_req, mantener comportamiento existente (lista por requerimiento)
+  if (id_req !== undefined && id_req !== null && id_req !== '' && !Number.isNaN(Number(id_req))) {
+    const { rows } = await pool.query(Q.actividadesByReqEmpleado(Number(id_req), id_empleado));
+    return rows || [];
+  }
+
+  // Sin id_req → Kanban de "Mis Actividades" (delegado 100% al queries)
+  const { rows } = await pool.query(Q.listMisActividadesKanban(id_empleado));
   return rows || [];
 }
 
@@ -190,16 +198,15 @@ async function updateActividad(userId = null, id_actividad, body = {}) {
   }
 
   const actividad = (body.actividad || '').trim();
+  const id_estado = Number(body.id_estado) || core.id_estado;
+  const id_req = Number(body.id_req || core.id_req);
+
+  // Fechas saneadas
   const fiActY = ymdFrom(body.fecha_inicio_actividad);
   const ffProgY = ymdFrom(body.fecha_fin_programada);
-  const id_estado = Number(body.id_estado) || 1;
 
-  if (!actividad) { const e = new Error('El campo "actividad" es obligatorio'); e.status = 400; throw e; }
-  if (!isValidYMD(fiActY) || !isValidYMD(ffProgY)) {
-    const e = new Error('Fechas inválidas, usa formato YYYY-MM-DD'); e.status = 400; throw e;
-  }
-
-  const reqRs = await pool.query(Q.getReqCore(Number(core.id_req)));
+  // Validar requerimiento y reglas de fecha
+  const reqRs = await pool.query(Q.getReqCore(Number(id_req)));
   const reqRow = reqRs.rows?.[0] || null;
   if (!reqRow) { const e = new Error('Requerimiento no encontrado'); e.status = 404; throw e; }
 
@@ -221,8 +228,8 @@ async function updateActividad(userId = null, id_actividad, body = {}) {
     obligaciones = parsed;
   }
 
-  // Si se envía Finalizada, fijamos fecha_fin_actividad = hoy; si no, no la tocamos
-  const fecha_fin_actividad = (id_estado === 3) ? ymdFrom(new Date()) : null;
+  // Si pasa a FINALIZADA, fijamos fecha_fin_actividad = hoy (YYYY-MM-DD)
+  const fechaFinActividadY = (id_estado === 3) ? ymdFrom(new Date()) : null;
 
   const client = await pool.connect();
   try {
@@ -234,22 +241,22 @@ async function updateActividad(userId = null, id_actividad, body = {}) {
       fecha_inicio_actividad: fiActY,
       fecha_fin_programada: ffProgY,
       id_estado,
-      fecha_fin_actividad, // <- NUEVO (null o hoy)
+      fecha_fin_actividad: fechaFinActividadY, // solo se setea si cambia a 3
       userId,
       id_empleado,
     }));
 
-    if (!up.rows?.length) {
-      const e = new Error('No se pudo actualizar (no existe o sin permiso)'); e.status = 404; throw e;
-    }
+    if (!up.rows?.[0]?.id_actividad) { throw new Error('No se pudo actualizar la actividad'); }
 
-    if (obligaciones) {
+    if (Array.isArray(obligaciones)) {
       await client.query(Q.deleteActividadObligaciones(Number(id_actividad)));
-      await client.query(Q.insertActividadObligaciones(Number(id_actividad), obligaciones, userId));
+      if (obligaciones.length) {
+        await client.query(Q.insertActividadObligaciones(Number(id_actividad), obligaciones, userId));
+      }
     }
 
     await client.query('COMMIT');
-    return true;
+    return { id_actividad: Number(id_actividad) };
   } catch (e) {
     await client.query('ROLLBACK');
     throw e;

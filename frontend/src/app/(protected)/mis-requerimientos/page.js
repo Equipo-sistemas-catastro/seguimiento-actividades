@@ -189,17 +189,19 @@ function EditarActividadModal({ open, onClose, id_actividad, estados, fiReq, ffR
     setLoading(true);
     fetchActividadById(id_actividad)
       .then((d) => {
-        setDetalle(d);
+        // << Fix robusto: si backend envía {ok, item}, usamos item; si no, usamos d.
+        const x = d?.item ?? d;
+        setDetalle(x);
         form.setFieldsValue({
-          actividad: d?.actividad || "",
-          fecha_inicio_actividad: d?.fecha_inicio_actividad ? dayjs(d.fecha_inicio_actividad) : null,
-          fecha_fin_programada: d?.fecha_fin_programada ? dayjs(d.fecha_fin_programada) : null,
-          id_estado: d?.id_estado ?? 1,
+          actividad: x?.actividad || "",
+          fecha_inicio_actividad: x?.fecha_inicio_actividad ? dayjs(x.fecha_inicio_actividad) : null,
+          fecha_fin_programada: x?.fecha_fin_programada ? dayjs(x.fecha_fin_programada) : null,
+          id_estado: x?.id_estado ?? 1,
         });
-        const obls = Array.isArray(d?.obligaciones)
-          ? d.obligaciones
-          : Array.isArray(d?.actividad_obligaciones)
-          ? d.actividad_obligaciones
+        const obls = Array.isArray(x?.obligaciones)
+          ? x.obligaciones
+          : Array.isArray(x?.actividad_obligaciones)
+          ? x.actividad_obligaciones
           : [];
         setOblSel(obls.map((o) => Number(o.id_obligacion)).filter(Number.isFinite));
       })
@@ -392,6 +394,7 @@ function CrearActividadModal({ open, onClose, id_req, estados, onCreated }) {
     try {
       const vals = await form.validateFields();
       if (!oblSel.length) {
+        const { message } = App.useApp();
         message.warning("Debes seleccionar al menos una obligación");
         setOblOpen(true);
         return;
@@ -405,6 +408,7 @@ function CrearActividadModal({ open, onClose, id_req, estados, onCreated }) {
         id_estado: vals.id_estado,
         obligaciones: oblSel,
       });
+      const { message } = App.useApp();
       message.success("Actividad creada");
 
       setActsLoading(true);
@@ -417,6 +421,7 @@ function CrearActividadModal({ open, onClose, id_req, estados, onCreated }) {
       setOblSel([]);
     } catch (e) {
       if (e?.errorFields) return;
+      const { message } = App.useApp();
       message.error(e?.response?.data?.error || e?.message || "Error creando la actividad");
     } finally {
       setLoading(false);
