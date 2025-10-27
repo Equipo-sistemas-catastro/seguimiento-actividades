@@ -394,7 +394,7 @@ function CrearActividadModal({ open, onClose, id_req, estados, onCreated }) {
     try {
       const vals = await form.validateFields();
       if (!oblSel.length) {
-        const { message } = App.useApp();
+        /*const { message } = App.useApp();*/
         message.warning("Debes seleccionar al menos una obligación");
         setOblOpen(true);
         return;
@@ -408,7 +408,7 @@ function CrearActividadModal({ open, onClose, id_req, estados, onCreated }) {
         id_estado: vals.id_estado,
         obligaciones: oblSel,
       });
-      const { message } = App.useApp();
+      /*const { message } = App.useApp();*/
       message.success("Actividad creada");
 
       setActsLoading(true);
@@ -421,7 +421,7 @@ function CrearActividadModal({ open, onClose, id_req, estados, onCreated }) {
       setOblSel([]);
     } catch (e) {
       if (e?.errorFields) return;
-      const { message } = App.useApp();
+      /*const { message } = App.useApp();*/
       message.error(e?.response?.data?.error || e?.message || "Error creando la actividad");
     } finally {
       setLoading(false);

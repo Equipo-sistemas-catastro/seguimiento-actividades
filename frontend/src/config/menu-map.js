@@ -8,6 +8,8 @@ import {
   FileProtectOutlined,
   BankOutlined,
   FileTextOutlined,
+  ProfileOutlined,
+  FileDoneOutlined,
   FlagOutlined,
   TeamOutlined,
   FolderOutlined,
@@ -15,6 +17,9 @@ import {
   AuditOutlined,
   PushpinOutlined,
   CarryOutOutlined,
+  ScheduleOutlined,
+  FormOutlined,
+  ProjectOutlined,
 } from "@ant-design/icons";
 
 // Mapa opcional de íconos por código (puedes ampliar sin tocar el layout)
@@ -28,7 +33,7 @@ export const ICON_BY_CODE = {
   ENTIDADES: <BankOutlined />,
   CONTRATOS: <FileTextOutlined />,
   ESTADOS: <FlagOutlined />,
-  REQUERIMIENTOS: <TeamOutlined />,
+  REQUERIMIENTOS: <FormOutlined />,
   ACCIONES: <TeamOutlined />,
   SEGUIMIENTO: <FolderOutlined />,
 
@@ -37,6 +42,10 @@ export const ICON_BY_CODE = {
   SGTO_ACCIONES: <AuditOutlined />,
   MIS_ASIGNACIONES: <PushpinOutlined />,
   ACTIVIDADES: <CarryOutOutlined />,
+  MIS_ACTIVIDADES: <ScheduleOutlined />,
+  MIS_REQUERIMIENTOS: <AuditOutlined />,
+  INFORME_ACTIVIDADES: <ProfileOutlined />,
+  VER_INFORMES: <FileDoneOutlined />,
 };
 
 // Ícono por defecto si no hay mapeo

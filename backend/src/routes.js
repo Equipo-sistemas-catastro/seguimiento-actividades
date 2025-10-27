@@ -10,11 +10,12 @@ router.use('/perfiles', require('./modules/perfiles/perfiles.routes'));
 router.use('/obligaciones', require('./modules/obligaciones/obligaciones.routes'));
 router.use('/empleados', require('./modules/empleados/empleados.routes')); // ya existente
 router.use('/componentes', require('./modules/componentes/componentes.routes')); // ⬅️ existente
-router.use('/contratos', require('./modules/contratos/contratos.routes')); // ⬅️ NUEVO
-router.use('/requerimientos', require('./modules/requerimientos/requerimientos.routes')); // ⬅️ NUEVO
-router.use('/mis-requerimientos', require('./modules/mis-requerimientos/mis-requerimientos.routes')); // SOLO asignados
+router.use('/contratos', require('./modules/contratos/contratos.routes')); // ⬅️ nuevo
+router.use('/requerimientos', require('./modules/requerimientos/requerimientos.routes')); // ⬅️ nuevo
+router.use('/mis-requerimientos', require('./modules/mis-requerimientos/mis-requerimientos.routes')); // solo asignados
+router.use('/actividades', require('./modules/actividades/actividades.routes')); // ⬅️ actividades
 
-// ⬇️ NUEVO: actividades
-router.use('/actividades', require('./modules/actividades/actividades.routes'));
+// ⬇️ NUEVO: informe de actividades
+router.use('/informe-actividades', require('./modules/informe-actividades/informe.routes'));
 
 module.exports = router;
