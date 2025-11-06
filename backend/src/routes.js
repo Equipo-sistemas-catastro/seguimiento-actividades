@@ -17,5 +17,7 @@ router.use('/actividades', require('./modules/actividades/actividades.routes'));
 
 // ⬇️ NUEVO: informe de actividades
 router.use('/informe-actividades', require('./modules/informe-actividades/informe.routes'));
+// ⬇️ NUEVO: Ver Informes (por empleado/año/mes)
+router.use('/ver-informes', require('./modules/ver-informes/ver-informes.routes'));
 
 module.exports = router;

@@ -11,7 +11,10 @@ r.use(authorize("INFORME_ACTIVIDADES"));
 r.get("/catalogos/anios", c.listAniosDisponibles);
 r.get("/catalogos/meses/:anio", c.listMesesDisponibles);
 
-// Generar informe completo
+// Generar informe (datos)
 r.get("/generar", c.generarInformeActividades);
+
+// Generar PDF (HTML→PDF con enlaces clicables)
+r.post("/pdf", c.generarPdfInforme);
 
 module.exports = r;

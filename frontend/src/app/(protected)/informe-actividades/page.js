@@ -6,8 +6,6 @@ import {
 import {
   FilePdfOutlined, SearchOutlined, ReloadOutlined,
 } from "@ant-design/icons";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 import {
   getAniosInforme,
   getMesesInforme,
@@ -18,8 +16,7 @@ const { Title, Text } = Typography;
 const { Option } = Select;
 
 /** ===== Helpers ===== **/
-const formatMoneyCOP = (value) =>
-  `$${Number(value || 0).toLocaleString("es-CO")}`;
+const formatMoneyCOP = (value) => `$${Number(value || 0).toLocaleString("es-CO")}`;
 const formatDateDDMMYYYY = (value) => {
   if (!value) return "-";
   const d = new Date(value);
@@ -35,42 +32,6 @@ const toIntOrNull = (s) => {
   return Number.isFinite(n) && n >= 0 ? n : null;
 };
 
-const MESES = [
-  "enero","febrero","marzo","abril","mayo","junio",
-  "julio","agosto","septiembre","octubre","noviembre","diciembre",
-];
-
-function normalizarMes(mes) {
-  if (mes === null || mes === undefined) return { idx: null, nombre: "" };
-  if (typeof mes === "number") return { idx: mes - 1, nombre: MESES[mes - 1] };
-  const s = String(mes).trim().toLowerCase();
-  const n = Number(s);
-  if (Number.isInteger(n) && n >= 1 && n <= 12)
-    return { idx: n - 1, nombre: MESES[n - 1] };
-  const idx = MESES.indexOf(s);
-  return { idx, nombre: idx >= 0 ? MESES[idx] : s };
-}
-function daysInMonth(year, monthIdx0) {
-  return new Date(year, monthIdx0 + 1, 0).getDate();
-}
-
-/** Convierte rutas UNC y locales a file:/// */
-function toFileURL(raw = "") {
-  let s = (raw || "").trim();
-  if (!s) return "";
-  if (/^(https?:\/\/|file:\/\/)/i.test(s)) return s;
-  if (/^\\\\/.test(s)) {
-    s = s.replace(/^\\\\+/, "").replace(/\\/g, "/");
-    return `file:///${s}`;
-  }
-  if (/^[a-zA-Z]:\\/.test(s)) {
-    s = s.replace(/\\/g, "/");
-    return `file:///${s}`;
-  }
-  return `file:///${s}`;
-}
-
-/** ===== Page ===== **/
 export default function InformeActividadesPage() {
   const { message } = App.useApp();
   const [loading, setLoading] = useState(false);
@@ -115,267 +76,55 @@ export default function InformeActividadesPage() {
     }
   };
 
-  /** ===== Exportar PDF ===== **/
-  const exportarPDF = () => {
-    const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "letter" });
-    const marginTop = 28.6, marginLeft = 28.35, marginRight = 28.35, marginBottom = 28.35;
-    const usableWidth = doc.internal.pageSize.getWidth() - marginLeft - marginRight;
-    const pageHeight = doc.internal.pageSize.getHeight();
-    let y = marginTop;
+  /** ===== Exportar PDF (fetch binario, no Axios) ===== **/
+  const exportarPDF = async () => {
+    if (!informe?.length) return message.warning("Primero genere el informe.");
 
-    /** === Tabla principal === **/
-    const head = [
-      [
-        { content: `INFORME EJECUCION DE ACTIVIDADES No. ${numInforme}`, colSpan: 2, styles: { halign: "center", fontStyle: "bold" } },
-        { content: "OBJETO DEL CONTRATO", styles: { halign: "center", fontStyle: "bold" } },
-      ],
-      [
-        { content: "No. CONTRATO", styles: { fontStyle: "bold" } },
-        { content: contrato?.num_contrato || "-", styles: { fontStyle: "normal" } },
-        {
-          content: contrato?.objeto_contrato || "Sin descripción",
-          rowSpan: 7,
-          styles: { valign: "top", halign: "left", fontStyle: "normal" },
-        },
-      ],
-      [
-        { content: "NOMBRE CONTRATISTA", styles: { fontStyle: "bold" } },
-        { content: contrato?.nombre_empleado || "-", styles: { fontStyle: "normal" } }, null,
-      ],
-      [
-        { content: "ENTIDAD CONTRATANTE", styles: { fontStyle: "bold" } },
-        { content: contrato?.entidad_contratante || "-", styles: { fontStyle: "normal" } }, null,
-      ],
-      [
-        { content: "SUPERVISOR ITM", styles: { fontStyle: "bold" } },
-        { content: contrato?.supervisor_contrato || "-", styles: { fontStyle: "normal" } }, null,
-      ],
-      [
-        { content: "VALOR TOTAL DE CONTRATO", styles: { fontStyle: "bold" } },
-        { content: formatMoneyCOP(contrato?.valor_contrato), styles: { fontStyle: "normal" } }, null,
-      ],
-      [
-        { content: "DURACION DEL CONTRATO", styles: { fontStyle: "bold" } },
-        { content: contrato?.duracion_contrato || "-", styles: { fontStyle: "normal" } }, null,
-      ],
-      [
-        { content: "FECHA INICIO DE ACTIVIDADES", styles: { fontStyle: "bold" } },
-        { content: formatDateDDMMYYYY(contrato?.fecha_inicio_contrato), styles: { fontStyle: "normal" } }, null,
-      ],
-      [
-        {
-          content: "ACTIVIDAD DEL CONTRATO: Obligaciones específicas según contrato",
-          styles: { halign: "left", fontStyle: "bold" },
-        },
-        {
-          content: "DESCRIPCIÓN DE LA ACTIVIDAD: Ejecución o desarrollo de las obligaciones específicas según contrato",
-          styles: { halign: "left", fontStyle: "bold" },
-        },
-        {
-          content: "DESCRIPCIÓN DE EVIDENCIA: Evidencias de las obligaciones del contrato",
-          styles: { halign: "left", fontStyle: "bold" },
-        },
-      ],
-    ];
+    const payload = {
+      numInforme,
+      anio,
+      mes,
+      observaciones,
+      dificultades,
+      valorPeriodo,
+    };
 
-    const body = (informe || []).map((r) => [
-      { content: r.obligacion_contractual },
-      { content: r.descripcion_actividades },
-      //{ content: "", link: toFileURL(r.url_evidencia || ""), original: r.url_evidencia || "" },
-      { content: r.url_evidencia || "" },
-    ]);
-
-    body.push([{ content: "Declaro el cumplimiento del pago de aportes al Sistema de Seguridad Social.", colSpan: 3 }]);
-    body.push([{ content: "Las actividades están evidencias y en poder del supervisor para dar cumplimiento con la respectiva cancelación de los honorarios.", colSpan: 3 }]);
-    body.push([{ content: `OBSERVACIONES (En caso de tenerlas):\n${(observaciones || "-").trim()}`, colSpan: 3 }]);
-    body.push([{ content: `DIFICULTADES (En caso de tenerlas):\n${(dificultades || "-").trim()}`, colSpan: 3 }]);
-
-    // En la configuración de autoTable:
-    autoTable(doc, {
-      startY: y,
-      theme: "grid",
-      head,
-      body,
-      showHead: 'firstPage',
-      styles: { fontSize: 9, cellPadding: 4, lineColor: [0,0,0], lineWidth: 0.2, textColor: 0, valign: "top" },
-      headStyles: { fillColor: [255,255,255], textColor: [0,0,0] },
-      columnStyles: {
-        0: { cellWidth: usableWidth / 3, overflow: "linebreak" },
-        1: { cellWidth: usableWidth / 3, overflow: "linebreak" },
-        2: { cellWidth: usableWidth / 3, overflow: "linebreak" },
-      },
-      margin: { left: marginLeft, right: marginRight },
-
-      didParseCell: (data) => {
-        if (data.section === "body" && data.column.index === 2 && !data.cell.colSpan) {
-          const raw = data.row.raw[2];
-          const text = (raw?.original ?? "").toString().trim();
-          if (!text) return;
-          const w = data.cell.width - 4;
-          const lines = doc.splitTextToSize(text, w);
-          data.row.raw[2]._lines = lines;
-          data.cell.text = [""]; // Evita texto negro
-        }
-      },
-      didDrawCell: (data) => {
-        if (data.section === "body" && data.column.index === 2 && !data.cell.colSpan) {
-          const text = (data.cell.raw || "").trim();
-          if (!text) return;
-
-          const url = toFileURL(text);
-          const x = data.cell.x + 2;
-          const y = data.cell.y + 10;
-          const w = data.cell.width - 4;
-
-          // Ajuste de líneas
-          const lines = doc.splitTextToSize(text, w);
-          let yPos = y;
-
-          // Texto azul y subrayado visible
-          doc.setFontSize(9);
-          doc.setTextColor(0, 0, 255);
-          doc.setDrawColor(0, 0, 255);
-          for (const line of lines) {
-            const lw = doc.getTextWidth(line);
-            doc.text(line, x, yPos);
-            doc.line(x, yPos + 1, x + lw, yPos + 1);
-            yPos += 12;
-          }
-          doc.setTextColor(0, 0, 0);
-
-          // 🔹 Inyectar hipervínculo real en el PDF (nivel bajo)
-          try {
-            const page = doc.internal.getCurrentPageInfo().pageContext;
-            const pdf = doc.internal.stream;
-            const linkRect = [
-              x,
-              doc.internal.pageSize.getHeight() - (y + lines.length * 12),
-              x + w,
-              doc.internal.pageSize.getHeight() - (y - 4),
-            ];
-            // crear anotación
-            doc.internal.write(
-              `<< /Type /Annot /Subtype /Link /Rect [${linkRect.join(" ")}] /Border [0 0 0] /A << /S /URI /URI (${url}) >> >>`
-            );
-          } catch (err) {
-            console.warn("No se pudo crear el enlace PDF directo:", err);
-          }
-        }
-      },
-    });
-
-/*
-    // ======= Hipervínculos de evidencia post-render (ajuste de altura real) =======
+    setLoading(true);
     try {
-      const table = doc.lastAutoTable;
-      if (table && Array.isArray(table.body)) {
-        for (const row of table.body) {
-          const cell = row.cells[2];
-          if (!cell) continue;
-          const raw = row.raw[2];
-          const text = (raw?.original ?? raw?.content ?? raw ?? "").toString().trim();
-          const url = raw?.link || toFileURL(text);
-          if (!text) continue;
+      const token = localStorage.getItem("token");
+      const base = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5012/api";
 
-          const x = cell.x + 2;
-          let yPos = cell.y + 10;
-          const w = cell.width - 4;
+      const resp = await fetch(`${base}/informe-actividades/pdf`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          "Accept": "application/pdf",
+        },
+        body: JSON.stringify(payload),
+      });
 
-          // recalculamos líneas para saber altura
-          const lines = doc.splitTextToSize(text, w);
-          const textHeight = lines.length * 12 + 4;
-
-          // aumentamos la altura de la celda (y por tanto la fila)
-          if (textHeight > cell.height) {
-            cell.height = textHeight;
-          }
-
-          // repintar el texto azul en la posición ajustada
-          doc.setFontSize(9);
-          doc.setTextColor(0, 0, 255);
-          doc.setDrawColor(0, 0, 255);
-
-          for (const line of lines) {
-            const lw = doc.getTextWidth(line);
-            doc.text(line, x, yPos);
-            doc.line(x, yPos + 1, x + lw, yPos + 1);
-            doc.link(x, yPos - 9, lw, 12, { url });
-            yPos += 12;
-          }
-
-          // limpiar texto negro original (sobrepintando con fondo blanco)
-          doc.setFillColor(255, 255, 255);
-          doc.rect(cell.x + 1, cell.y + 1, cell.width - 2, cell.height - 2, "F");
-
-          doc.setTextColor(0, 0, 255);
-          yPos = cell.y + 10;
-          for (const line of lines) {
-            const lw = doc.getTextWidth(line);
-            doc.text(line, x, yPos);
-            doc.line(x, yPos + 1, x + lw, yPos + 1);
-            doc.link(x, yPos - 9, lw, 12, { url });
-            yPos += 12;
-          }
-
-          doc.setTextColor(0, 0, 0);
-          doc.setDrawColor(0, 0, 0);
-        }
+      if (!resp.ok) {
+        const t = await resp.text();
+        throw new Error(`HTTP ${resp.status} - ${t}`);
       }
-    } catch (err) {
-      console.error("Error aplicando hipervínculos:", err);
+
+      const buf = await resp.arrayBuffer();
+      const blob = new Blob([buf], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Informe_Actividades_${anio}_${mes}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error(e);
+      message.error("No se pudo exportar el PDF");
+    } finally {
+      setLoading(false);
     }
-*/
-    /** === Bloque final (sin cambios) === */
-    let yEnd = doc.lastAutoTable.finalY + 30;
-    const { idx: mesIdx, nombre: nombreMes } = normalizarMes(mes);
-    const diaInicio = 1;
-    const diaFin = daysInMonth(Number(anio), mesIdx);
-
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(10);
-    const label = "PERIODO EJECUTADO:";
-    doc.text(label, marginLeft, yEnd);
-    const labelW = doc.getTextWidth(label + " ");
-    doc.setFont("helvetica", "normal");
-    doc.text(
-      `Del ${String(diaInicio).padStart(2, "0")} de ${nombreMes} al ${String(diaFin).padStart(2, "0")} de ${nombreMes} del ${anio}`,
-      marginLeft + labelW,
-      yEnd
-    );
-
-    yEnd += 18;
-    doc.setFont("helvetica", "bold");
-    doc.text("VALOR DEL PERIODO A COBRAR:", marginLeft, yEnd);
-    const valW = doc.getTextWidth("VALOR DEL PERIODO A COBRAR: ");
-    doc.setFont("helvetica", "normal");
-    doc.text(formatMoneyCOP(valorPeriodo), marginLeft + valW, yEnd);
-
-    const alturaBloqueProtegido = 240;
-    if (yEnd + 36 + alturaBloqueProtegido > pageHeight - marginBottom) {
-      doc.addPage();
-      yEnd = marginTop;
-    }
-
-    yEnd += 36;
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.text(`Para constancia se firma en Medellín a los días ${diaFin} del mes ${nombreMes} del año ${anio}.`, marginLeft, yEnd);
-
-    yEnd += 40;
-    doc.line(marginLeft, yEnd, marginLeft + 250, yEnd);
-    yEnd += 14;
-    doc.text(contrato?.nombre_empleado || "-", marginLeft, yEnd);
-    yEnd += 14;
-    doc.text("Firma del contratista", marginLeft, yEnd);
-
-    yEnd += 80;
-    doc.line(marginLeft, yEnd, marginLeft + 250, yEnd);
-    yEnd += 14;
-    doc.text("Bibiana Patricia Gómez Pérez", marginLeft, yEnd);
-    yEnd += 14;
-    doc.text("Supervisor (a) Catastro", marginLeft, yEnd);
-
-    doc.save(`Informe_Actividades_${anio}_${mes}.pdf`);
   };
 
   /** ===== UI ===== **/
