@@ -21,6 +21,55 @@ SET default_tablespace = '';
 SET default_table_access_method = heap;
 
 --
+-- Name: tbl_accion_obligacion; Type: TABLE; Schema: dev; Owner: postgres
+--
+
+CREATE TABLE dev.tbl_accion_obligacion (
+    id_accion bigint NOT NULL,
+    id_obligacion bigint NOT NULL,
+    id_user_auditoria uuid,
+    fecha_auditoria timestamp without time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE dev.tbl_accion_obligacion OWNER TO postgres;
+
+--
+-- Name: tbl_acciones; Type: TABLE; Schema: dev; Owner: postgres
+--
+
+CREATE TABLE dev.tbl_acciones (
+    id_accion bigint NOT NULL,
+    accion text NOT NULL,
+    fecha_inicio_accion date,
+    fecha_fin_programada date,
+    fecha_fin_accion date,
+    id_req bigint NOT NULL,
+    id_estado bigint NOT NULL,
+    id_user_auditoria uuid,
+    fecha_auditoria timestamp without time zone DEFAULT now() NOT NULL,
+    id_empleado bigint NOT NULL,
+    CONSTRAINT chk_accion_fechas CHECK ((((fecha_fin_programada IS NULL) OR (fecha_fin_programada >= fecha_inicio_accion)) AND ((fecha_fin_accion IS NULL) OR (fecha_fin_accion >= fecha_inicio_accion))))
+);
+
+
+ALTER TABLE dev.tbl_acciones OWNER TO postgres;
+
+--
+-- Name: tbl_acciones_id_accion_seq; Type: SEQUENCE; Schema: dev; Owner: postgres
+--
+
+ALTER TABLE dev.tbl_acciones ALTER COLUMN id_accion ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME dev.tbl_acciones_id_accion_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
 -- Name: tbl_actividad_obligacion; Type: TABLE; Schema: dev; Owner: postgres
 --
 
@@ -584,534 +633,19 @@ ALTER TABLE dev.tbl_tipos_contrato ALTER COLUMN id_tipo_contrato ADD GENERATED A
 
 
 --
--- Data for Name: tbl_actividad_obligacion; Type: TABLE DATA; Schema: dev; Owner: postgres
+-- Name: tbl_accion_obligacion tbl_accion_obligacion_pkey; Type: CONSTRAINT; Schema: dev; Owner: postgres
 --
 
-COPY dev.tbl_actividad_obligacion (id_actividad, id_obligacion, id_user_auditoria, fecha_auditoria) FROM stdin;
-2	2	3059b6c4-e784-4fc7-a316-f9e3becfc580	2025-09-22 16:28:01.640492
-2	4	3059b6c4-e784-4fc7-a316-f9e3becfc580	2025-09-22 16:28:01.640492
-2	3	3059b6c4-e784-4fc7-a316-f9e3becfc580	2025-09-22 16:28:01.640492
-3	2	3059b6c4-e784-4fc7-a316-f9e3becfc580	2025-09-23 10:17:51.989002
-3	4	3059b6c4-e784-4fc7-a316-f9e3becfc580	2025-09-23 10:17:51.989002
-3	10	3059b6c4-e784-4fc7-a316-f9e3becfc580	2025-09-23 10:17:51.989002
-3	3	3059b6c4-e784-4fc7-a316-f9e3becfc580	2025-09-23 10:17:51.989002
-3	8	3059b6c4-e784-4fc7-a316-f9e3becfc580	2025-09-23 10:17:51.989002
-3	9	3059b6c4-e784-4fc7-a316-f9e3becfc580	2025-09-23 10:17:51.989002
-6	9	3059b6c4-e784-4fc7-a316-f9e3becfc580	2025-10-01 11:18:52.756755
-4	8	3059b6c4-e784-4fc7-a316-f9e3becfc580	2025-10-01 11:24:48.194824
-4	9	3059b6c4-e784-4fc7-a316-f9e3becfc580	2025-10-01 11:24:48.194824
-4	10	3059b6c4-e784-4fc7-a316-f9e3becfc580	2025-10-01 11:24:48.194824
-1	2	3059b6c4-e784-4fc7-a316-f9e3becfc580	2025-10-01 11:44:30.33478
-1	4	3059b6c4-e784-4fc7-a316-f9e3becfc580	2025-10-01 11:44:30.33478
-7	12	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-10-21 14:30:19.436803
-7	16	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-10-21 14:30:19.436803
-7	30	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-10-21 14:30:19.436803
-7	33	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-10-21 14:30:19.436803
-8	12	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-10-21 14:31:07.270156
-8	18	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-10-21 14:31:07.270156
-8	17	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-10-21 14:31:07.270156
-8	20	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-10-21 14:31:07.270156
-8	37	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-10-21 14:31:07.270156
-9	11	3059b6c4-e784-4fc7-a316-f9e3becfc580	2025-10-21 14:32:06.914205
-9	37	3059b6c4-e784-4fc7-a316-f9e3becfc580	2025-10-21 14:32:06.914205
-10	11	3059b6c4-e784-4fc7-a316-f9e3becfc580	2025-10-21 15:54:36.60875
-10	12	3059b6c4-e784-4fc7-a316-f9e3becfc580	2025-10-21 15:54:36.60875
-5	11	3059b6c4-e784-4fc7-a316-f9e3becfc580	2025-10-01 11:40:45.998314
-11	37	3059b6c4-e784-4fc7-a316-f9e3becfc580	2025-10-23 11:21:11.711874
-14	11	3059b6c4-e784-4fc7-a316-f9e3becfc580	2025-10-23 11:21:13.698693
-13	11	3059b6c4-e784-4fc7-a316-f9e3becfc580	2025-10-23 11:21:14.770155
-12	11	3059b6c4-e784-4fc7-a316-f9e3becfc580	2025-10-23 11:21:16.004876
-15	11	3059b6c4-e784-4fc7-a316-f9e3becfc580	2025-10-23 11:21:18.819792
-16	34	3059b6c4-e784-4fc7-a316-f9e3becfc580	2025-10-23 16:43:17.381776
-\.
+ALTER TABLE ONLY dev.tbl_accion_obligacion
+    ADD CONSTRAINT tbl_accion_obligacion_pkey PRIMARY KEY (id_accion, id_obligacion);
 
 
 --
--- Data for Name: tbl_actividades; Type: TABLE DATA; Schema: dev; Owner: postgres
+-- Name: tbl_acciones tbl_acciones_pkey; Type: CONSTRAINT; Schema: dev; Owner: postgres
 --
 
-COPY dev.tbl_actividades (id_actividad, actividad, fecha_inicio_actividad, fecha_fin_programada, fecha_fin_actividad, id_req, id_empleado, id_estado, id_user_auditoria, fecha_auditoria) FROM stdin;
-2	Prueba crear actividad.	2025-10-01	2025-11-01	\N	10	4	1	3059b6c4-e784-4fc7-a316-f9e3becfc580	2025-09-22 16:28:01.640492
-6	Prueba crear act. desde mis activ.	2025-09-10	2025-09-10	\N	10	4	2	3059b6c4-e784-4fc7-a316-f9e3becfc580	2025-10-01 11:18:52.756755
-4	Mis Actividades A1	2025-09-10	2025-09-10	\N	1	4	2	3059b6c4-e784-4fc7-a316-f9e3becfc580	2025-10-01 11:24:48.194824
-3	Prueba 2 crear actividad.	2025-09-20	2025-10-01	2025-10-02	10	4	3	3059b6c4-e784-4fc7-a316-f9e3becfc580	2025-09-23 10:17:51.989002
-5	Prueba update 3 crear actividad desde mis requerimientos	2025-09-30	2025-10-02	\N	10	4	2	3059b6c4-e784-4fc7-a316-f9e3becfc580	2025-10-01 11:40:45.998314
-1	Plan de trabajo inicial	2025-09-10	2025-09-13	\N	10	4	1	3059b6c4-e784-4fc7-a316-f9e3becfc580	2025-10-01 11:44:30.33478
-7	Prueba Actividad Admón	2025-09-01	2025-09-03	\N	13	1	1	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-10-21 14:30:19.436803
-8	Actividad Prueba Admón	2025-10-21	2025-10-31	\N	10	1	1	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-10-21 14:31:07.270156
-9	Actividad Prueba Error	2025-10-21	2025-10-31	\N	10	4	1	3059b6c4-e784-4fc7-a316-f9e3becfc580	2025-10-21 14:32:06.914205
-10	Actividad Pedro	2025-10-22	2025-10-22	\N	15	4	1	3059b6c4-e784-4fc7-a316-f9e3becfc580	2025-10-21 15:54:36.60875
-11	Act >Pedro 2	2025-10-31	2025-10-31	\N	15	4	2	3059b6c4-e784-4fc7-a316-f9e3becfc580	2025-10-23 11:21:11.711874
-14	Act Pedro 3.\nkasuafuons aovns vi niks voas	2025-10-25	2025-10-29	\N	15	4	2	3059b6c4-e784-4fc7-a316-f9e3becfc580	2025-10-23 11:21:13.698693
-13	Act Pedro 2. uahf alicas cain sfavnis visnvk svins vks ksvknsikkviks msvk njsvjksj	2025-10-23	2025-10-29	\N	10	4	2	3059b6c4-e784-4fc7-a316-f9e3becfc580	2025-10-23 11:21:14.770155
-12	Act Pedro 1	2025-10-23	2025-10-29	\N	15	4	2	3059b6c4-e784-4fc7-a316-f9e3becfc580	2025-10-23 11:21:16.004876
-15	Act Pedro 4.\nuianfqi vi kjf cia qka vkae	2025-10-24	2025-10-25	\N	15	4	2	3059b6c4-e784-4fc7-a316-f9e3becfc580	2025-10-23 11:21:18.819792
-16	Reunion	2025-10-23	2025-10-23	\N	15	4	2	3059b6c4-e784-4fc7-a316-f9e3becfc580	2025-10-23 16:43:17.381776
-\.
-
-
---
--- Data for Name: tbl_asigna_requerimiento; Type: TABLE DATA; Schema: dev; Owner: postgres
---
-
-COPY dev.tbl_asigna_requerimiento (id_req, id_user_auditoria, fecha_auditoria, id_empleado) FROM stdin;
-1	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-09 13:21:38.39567	2
-1	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-09 13:21:38.39567	1
-1	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-09 13:21:38.39567	3
-9	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-10 10:37:15.041919	2
-10	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-10 11:45:34.166293	1
-10	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-10 14:11:22.176218	4
-11	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-10 14:12:04.399732	3
-12	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-10 15:25:44.049999	2
-12	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-10 15:25:44.049999	1
-13	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-10 15:30:29.359467	1
-10	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-11 09:25:32.099046	3
-1	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-17 10:02:10.284862	4
-1	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-23 14:32:39.237571	5
-14	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-10-21 14:44:05.148827	1
-14	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-10-21 14:44:42.725179	6
-15	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-10-21 15:52:49.284993	6
-15	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-10-21 15:52:49.284993	5
-15	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-10-21 15:52:49.284993	4
-15	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-10-21 15:52:49.284993	1
-\.
-
-
---
--- Data for Name: tbl_componentes; Type: TABLE DATA; Schema: dev; Owner: postgres
---
-
-COPY dev.tbl_componentes (id_componente, componente, id_user_auditoria, fecha_auditoria) FROM stdin;
-1	SISTEMAS	\N	2025-08-28 11:47:23.329229
-2	JURIDICA	\N	2025-08-28 12:59:04.40598
-3	MUTACIONES	\N	2025-08-28 14:23:01.824224
-\.
-
-
---
--- Data for Name: tbl_contratos; Type: TABLE DATA; Schema: dev; Owner: postgres
---
-
-COPY dev.tbl_contratos (id_contrato, num_contrato, fecha_inicio_contrato, fecha_fin_contrato, valor_contrato, supervisor_contrato, id_tipo_contrato, id_entidad, id_user_auditoria, fecha_auditoria, id_empleado, objeto_contrato) FROM stdin;
-1	P-1990	2025-09-04	2025-12-31	32435322	Pepe	1	1	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-08 13:05:49.046983	1	Sin descripción
-2	p-125	2025-03-31	2025-08-31	32423212	\N	1	1	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-08 13:07:00.145361	4	Sin descripción
-3	P-13242	2025-09-04	2025-12-31	39438399	Chucho	1	1	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-08 14:37:43.063954	4	Prestación de servicios como contratista independiente, sin vínculo laboral por su propia cuenta y riesgo para realizar la gestión de Apoyo Profesional en gestión de Sistema de Información Catastral en ejecución del Contrato Interadministrativo No.4600105480 de 2025, celebrado entre EL DISTRITO ESPECIAL DE CIENCIA TECNOLOGÍA E INNOVACIÓN DE MEDELLÍN, SECRETARÍA DE GESTIÓN Y CONTROL TERRITORIAL y el ITM.
-\.
-
-
---
--- Data for Name: tbl_empleado_componente; Type: TABLE DATA; Schema: dev; Owner: postgres
---
-
-COPY dev.tbl_empleado_componente (id_empl_comp, id_empleado, id_componente, estado, fecha_inicio, fecha_fin, id_user_auditoria, fecha_auditoria) FROM stdin;
-1	1	1	inactivo	2025-08-28 13:08:41.106384	2025-08-28 13:10:55.343236	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-08-28 13:10:55.343236
-2	1	2	inactivo	2025-08-28 13:10:55.343236	2025-08-28 14:23:41.689126	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-08-28 14:23:41.689126
-3	1	3	activo	2025-08-28 14:23:41.689126	\N	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-08-28 14:23:41.689126
-4	4	1	activo	2025-08-29 17:41:46.62559	\N	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-08-29 17:41:46.62559
-5	3	2	inactivo	2025-08-29 17:42:50.913359	2025-08-29 17:43:36.532894	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-08-29 17:43:36.532894
-6	3	3	activo	2025-08-29 17:43:36.532894	\N	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-08-29 17:43:36.532894
-7	6	3	activo	2025-10-21 14:43:01.836337	\N	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-10-21 14:43:01.836337
-\.
-
-
---
--- Data for Name: tbl_empleado_perfil; Type: TABLE DATA; Schema: dev; Owner: postgres
---
-
-COPY dev.tbl_empleado_perfil (id_empl_perf, id_empleado, id_perfil, estado, fecha_inicio, fecha_fin, id_user_auditoria, fecha_auditoria) FROM stdin;
-1	1	4	inactivo	2025-08-28 13:07:54.489954	2025-08-28 13:09:52.934905	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-08-28 13:09:52.934905
-2	1	5	inactivo	2025-08-28 13:09:52.934905	2025-08-28 14:22:30.098663	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-08-28 14:22:30.098663
-3	1	2	activo	2025-08-28 14:22:30.098663	\N	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-08-28 14:22:30.098663
-5	3	4	activo	2025-08-29 17:42:15.965174	\N	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-08-29 17:42:15.965174
-4	4	2	inactivo	2025-08-29 17:41:46.558913	2025-08-29 17:53:01.612832	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-08-29 17:53:01.612832
-6	4	5	inactivo	2025-08-29 17:53:01.612832	2025-10-01 13:09:56.499898	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-10-01 13:09:56.499898
-8	6	2	activo	2025-10-21 14:43:01.788819	\N	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-10-21 14:43:01.788819
-7	4	10	inactivo	2025-10-01 13:09:56.499898	2025-10-23 11:13:45.362066	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-10-23 11:13:45.362066
-9	4	2	activo	2025-10-23 11:13:45.362066	\N	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-10-23 11:13:45.362066
-\.
-
-
---
--- Data for Name: tbl_empleados_app_sgt_act; Type: TABLE DATA; Schema: dev; Owner: postgres
---
-
-COPY dev.tbl_empleados_app_sgt_act (id_empleado, cedula_empleado, primer_nombre_empl, segundo_nombre_empl, primer_apellido_empl, segundo_apellido_empl, fecha_nacimiento_empl, email_empleado, movil_empleado, estado, id_user_auditoria, fecha_auditoria) FROM stdin;
-1	3383821	Victor	Javier	Gonzalez	Escobar	1980-08-17	victorge08@gmail.com	3216276709	activo	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-08-28 15:51:33.011208
-2	9876543210	Laura	Marcela	Ramirez	Lopez	1992-03-12	victorge08@gmail.com	3008262691	activo	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-08-28 15:52:53.318247
-3	43168001	Martha	\N	Chores	\N	\N	victorge08@gmail.com	\N	activo	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-08-29 17:43:36.520023
-5	654321	Juanito	\N	Alimaña	\N	\N	victorge08@gmail.com	\N	activo	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-23 14:31:54.505664
-6	66666	Diablo	Negro	Belzebuth	Malak	2000-05-05	victorge08@gmail.com	\N	activo	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-10-21 14:43:01.767794
-4	123456	Pedro	\N	Navajas	\N	\N	victorge08@gmail.com	\N	activo	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-10-23 11:13:45.350764
-\.
-
-
---
--- Data for Name: tbl_entidad_contratante; Type: TABLE DATA; Schema: dev; Owner: postgres
---
-
-COPY dev.tbl_entidad_contratante (id_entidad, entidad, id_user_auditoria, fecha_auditoria) FROM stdin;
-1	ITM	\N	2025-09-08 09:43:14.548505
-\.
-
-
---
--- Data for Name: tbl_estados; Type: TABLE DATA; Schema: dev; Owner: postgres
---
-
-COPY dev.tbl_estados (id_estado, estado, id_user_auditoria, fecha_auditoria) FROM stdin;
-1	POR HACER	\N	2025-08-29 10:06:33.298808
-3	FINALIZADO	\N	2025-08-29 10:06:51.25158
-2	EN EJECUCIÓN	\N	2025-08-29 10:06:44.21653
-\.
-
-
---
--- Data for Name: tbl_evidencia_componentes; Type: TABLE DATA; Schema: dev; Owner: postgres
---
-
-COPY dev.tbl_evidencia_componentes (id_evidencia, id_componente, id_user_auditoria, fecha_auditoria) FROM stdin;
-\.
-
-
---
--- Data for Name: tbl_evidencias; Type: TABLE DATA; Schema: dev; Owner: postgres
---
-
-COPY dev.tbl_evidencias (id_evidencia, url_evidencia, id_user_auditoria, fecha_auditoria) FROM stdin;
-1	\\\\nas1\\Alcaldia\\229-GCT\\22920-S-Cat\\U-Gest-E-InvInfCat\\Cmn-Gest-E-InvInfCat\\Administrativa\\2025\\COORDINACIÒN ITM VIGENCIAS FUTURAS\\EVIDENCIAS	\N	2025-08-29 10:09:22.656672
-\.
-
-
---
--- Data for Name: tbl_menu_app_actividades; Type: TABLE DATA; Schema: dev; Owner: postgres
---
-
-COPY dev.tbl_menu_app_actividades (id_menu, code, descripcion, orden, id_user_auditoria, fecha_auditoria) FROM stdin;
-4	ACTIVIDADES	Actividades	4	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-08-13 10:20:08.912412
-5	PERFILES	Perfiles	5	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-08-13 10:22:20.256621
-8	ENTIDADES	Entidades	8	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-08-13 10:23:05.664945
-9	CONTRATOS	Contratos	9	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-08-13 10:23:19.081644
-10	REQUERIMIENTOS	Requerimientos	10	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-08-13 10:23:42.0028
-11	ACCCIONES	Acciones	11	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-08-13 10:24:02.43012
-12	SGTO_ACCIONES	Seguimiento Acciones	12	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-08-13 10:24:19.45212
-13	EMPLEADOS	Empleados	13	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-08-28 10:57:46.529071
-14	COMPONENTES	Componentes	14	\N	2025-08-29 13:16:29.826071
-15	MIS_ACTIVIDADES	Mis Actividades	15	\N	2025-09-08 15:24:26.21758
-16	MIS_REQUERIMIENTOS	Mis Requerimientos	16	\N	2025-09-22 08:58:43.836576
-18	VER_INFORMES	Ver Informes	\N	\N	2025-10-27 14:11:40.755098
-1	OBLIGACIONES	Oblig. Contractuales	1	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-08-13 10:17:35.431709
-17	INFORME_ACTIVIDADES	Informe Actividades	17	\N	2025-10-14 10:21:18.665121
-\.
-
-
---
--- Data for Name: tbl_obligacion_contractual; Type: TABLE DATA; Schema: dev; Owner: postgres
---
-
-COPY dev.tbl_obligacion_contractual (id_obligacion, obligacion_contractual, id_user_auditoria, fecha_auditoria) FROM stdin;
-2	Entregar informe mensual	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-08-19 11:09:47.55437
-3	Plan de mejora mensual	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-08-26 10:09:03.401371
-8	Prueba 1 de asociación con perfil	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-08-27 12:45:12.816027
-9	Prueba 2 de asociación con perfil	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-08-27 12:45:21.75416
-4	Entregar informe trimestral 	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-08-29 18:24:07.793863
-10	Entregar informe trimestral 2	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-08-29 18:24:17.539104
-11	Brindar asesoría sobre la plataforma SAP y sus transacciones.	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:41:26.463232
-12	Analizar los requerimientos funcionales y no funcionales de la plataforma con las áreas interesadas.	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:41:26.463232
-13	Preparar información alfanumérica y geoespacial para reportes de entes de control.	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:41:26.463232
-14	Realizar auditorías de integridad en bases de datos y corregir inconsistencias.	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:41:26.463232
-15	Realizar pruebas de calidad y seguridad de la información antes de la puesta en producción.	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:41:26.463232
-16	Diseñar y optimizar ETL para la gestión de modelos de datos catastrales (MODELO RIC).	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:41:26.463232
-17	Automatizar la generación de reportes periódicos (diarios, mensuales o anuales) mediante pipelines ETL.	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:41:26.463232
-18	Apoyar en la formulación e implementación de proyectos tecnológicos.	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:41:26.463232
-19	Generar scripts y consultas SQL para producción de informes.	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:41:26.463232
-20	Diseñar e implementar sistemas de almacenamiento en la nube.	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:41:26.463232
-21	Implementar mapas interactivos utilizando QGIS, Mapbox o Leaflet para representar datos geográficos.	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:41:26.463232
-22	Participar en la capacitación y documentación de procesos.	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:41:26.463232
-23	Realizar pruebas de calidad y seguridad en plataformas catastrales.	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:41:26.463232
-24	Configurar permisos y accesos diferenciados según los roles de los usuarios en el sistema.	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:41:26.463232
-25	Protección de datos sensibles y la implementación de normativas como ISO 27001 o GDPR.	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:41:26.463232
-26	Presentación y entrega de productos en los tiempos requeridos por la Subsecretaría.	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:41:26.463232
-27	Apoyar a los distintos grupos de trabajo en la elaboración de reportes y en la solución de inquietudes relacionadas al funcionamiento de las plataformas catastrales.	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:41:26.463232
-28	Participar y asistir a las diferentes reuniones y/o capacitaciones realizadas en la Subsecretaría por parte del Contratante y/o el coordinador del contrato.	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:41:26.463232
-29	Disponer de horarios asignados para la realización de las actividades contratadas, asegurando la interacción necesaria y fluida entre todos los actores del proceso catastral.	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:41:26.463232
-30	Realizar las actividades asignadas verificando calidad y oportunidad en tiempos de entrega.	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:41:26.463232
-31	Investigar y consultar los diferentes sistemas de información de la Subsecretaría de Catastro.	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:41:26.463232
-32	Reportar las actividades e informes realizados mensualmente.	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:41:26.463232
-33	Realizar las demás actividades que le sean asignadas de acuerdo a la naturaleza del contrato.	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:41:26.463232
-34	Participar y asistir a reuniones y/o capacitaciones realizadas en la Subsecretaría.	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:41:26.463232
-35	Disponer de herramientas y recursos tecnológicos necesarios para el cumplimiento de sus actividades contractuales.	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:41:26.463232
-36	Garantizar la integralidad del expediente catastral y la cadena de custodia de este.	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:41:26.463232
-37	Disponer de horarios asignados para la ejecución sucesiva y oportuna del proceso catastral.	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:41:26.463232
-\.
-
-
---
--- Data for Name: tbl_perfil_obligaciones; Type: TABLE DATA; Schema: dev; Owner: postgres
---
-
-COPY dev.tbl_perfil_obligaciones (id_perfil, id_obligacion, id_user_auditoria, fecha_auditoria) FROM stdin;
-10	11	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-08 09:36:11.639328
-10	12	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-08 09:36:11.639328
-10	37	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-08 09:36:11.639328
-7	3	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 09:33:49.897182
-7	4	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 09:33:49.897182
-11	11	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-08 14:28:05.806342
-11	12	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-08 14:28:05.806342
-11	13	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-08 14:28:05.806342
-2	11	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-15 15:12:47.126684
-2	12	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-15 15:12:47.126684
-2	13	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-15 15:12:47.126684
-2	14	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-15 15:12:47.126684
-2	15	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-15 15:12:47.126684
-2	16	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-15 15:12:47.126684
-2	17	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-15 15:12:47.126684
-2	18	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-15 15:12:47.126684
-2	19	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-15 15:12:47.126684
-2	20	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-15 15:12:47.126684
-2	21	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-15 15:12:47.126684
-2	22	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-15 15:12:47.126684
-2	23	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-15 15:12:47.126684
-8	11	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:45:06.021596
-8	12	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:45:06.021596
-8	13	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:45:06.021596
-8	14	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:45:06.021596
-8	15	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:45:06.021596
-8	16	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:45:06.021596
-8	17	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:45:06.021596
-8	18	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:45:06.021596
-8	19	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:45:06.021596
-8	20	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:45:06.021596
-8	21	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:45:06.021596
-8	22	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:45:06.021596
-8	23	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:45:06.021596
-8	24	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:45:06.021596
-8	25	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:45:06.021596
-8	26	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:45:06.021596
-8	27	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:45:06.021596
-8	28	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:45:06.021596
-8	29	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:45:06.021596
-8	30	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:45:06.021596
-8	31	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:45:06.021596
-8	32	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:45:06.021596
-8	33	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:45:06.021596
-8	34	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:45:06.021596
-8	35	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:45:06.021596
-8	36	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:45:06.021596
-8	37	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:45:06.021596
-2	24	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-15 15:12:47.126684
-2	25	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-15 15:12:47.126684
-2	26	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-15 15:12:47.126684
-2	27	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-15 15:12:47.126684
-2	28	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-15 15:12:47.126684
-2	29	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-15 15:12:47.126684
-2	30	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-15 15:12:47.126684
-2	31	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-15 15:12:47.126684
-2	32	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-15 15:12:47.126684
-2	33	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-15 15:12:47.126684
-2	34	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-15 15:12:47.126684
-2	35	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-15 15:12:47.126684
-2	36	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-15 15:12:47.126684
-2	37	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-15 15:12:47.126684
-5	2	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 09:20:41.732375
-5	3	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 09:20:41.732375
-5	4	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 09:20:41.732375
-5	8	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 09:20:41.732375
-5	9	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 09:20:41.732375
-5	10	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 09:20:41.732375
-\.
-
-
---
--- Data for Name: tbl_perfiles; Type: TABLE DATA; Schema: dev; Owner: postgres
---
-
-COPY dev.tbl_perfiles (id_perfil, perfil, descripcion_perfil, id_user_auditoria, fecha_auditoria) FROM stdin;
-4	Tecnólogo Sistemas	Tecnólogo Sistemas Catastro	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-08-20 10:02:08.696917
-5	Profesional de gestión de sistemas de información catastral	Profesional de gestión de sistemas de información catastral	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-08-21 11:33:43.700531
-6	Perfil para asociar obligación	Perfil para asociar obligación descrip.	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 09:20:41.714188
-7	Prueba perfil	Prueba	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 09:33:49.883434
-8	Perfil con Excel	Perfil con prueba de relación de obligaciones con excel.	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-05 11:45:06.008987
-10	New Profile B	New Profile B	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-08 09:36:11.628849
-11	Nuevo perfil Julio	Nuevo perfil Julio	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-08 14:28:05.793256
-2	Analista de sistemas	Analista de sistemas catastro 2	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-15 15:12:47.094764
-\.
-
-
---
--- Data for Name: tbl_requerimiento; Type: TABLE DATA; Schema: dev; Owner: postgres
---
-
-COPY dev.tbl_requerimiento (id_req, descripcion_req, fecha_inicio_req, fecha_fin_req, id_estado, id_user_auditoria, fecha_auditoria) FROM stdin;
-11	Prueba R4	2025-09-10	2025-10-31	2	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-10 14:13:50.410119
-9	Prueba R2 (editada)	2025-09-10	2025-10-20	3	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-10 14:21:01.671374
-12	Prueba R5	2025-10-01	2025-11-19	3	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-10 15:26:05.335649
-10	Prueba R3	2025-09-10	2025-11-30	1	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-11 09:25:32.099046
-1	Prueba R1	2025-09-09	2025-09-10	2	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-09-23 14:32:39.237571
-13	Prueba R6	2025-09-01	2025-10-31	1	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-10-21 14:23:53.534781
-14	Prueba New	2025-10-01	2025-10-03	2	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-10-21 14:44:42.725179
-15	Req julio	2025-10-21	2025-10-31	1	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-10-21 15:52:49.284993
-\.
-
-
---
--- Data for Name: tbl_rol_menu_actividades; Type: TABLE DATA; Schema: dev; Owner: postgres
---
-
-COPY dev.tbl_rol_menu_actividades (id_role, id_menu, id_user_auditoria, fecha_auditoria) FROM stdin;
-1	1	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-08-13 10:18:31.739709
-1	5	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-08-19 10:12:44.049712
-1	13	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-08-28 10:58:44.981331
-1	9	\N	2025-08-29 10:13:20.424735
-1	10	\N	2025-08-29 10:13:20.425648
-1	15	\N	2025-09-08 15:24:40.446802
-3	16	d4de7f10-dec2-4a64-b2b8-de8dcc38000e	2025-08-13 10:20:47.251384
-1	16	\N	2025-09-22 09:03:28.244029
-3	15	\N	2025-09-29 11:02:26.951115
-1	17	\N	2025-10-14 10:21:36.956519
-3	17	\N	2025-10-15 17:05:26.472135
-1	18	\N	2025-10-27 14:12:07.70469
-\.
-
-
---
--- Data for Name: tbl_role; Type: TABLE DATA; Schema: dev; Owner: postgres
---
-
-COPY dev.tbl_role (id_role, rol_name, create_at) FROM stdin;
-1	admon	\N
-2	coordinador	\N
-3	funcionario	\N
-\.
-
-
---
--- Data for Name: tbl_sgto_accion_oblig; Type: TABLE DATA; Schema: dev; Owner: postgres
---
-
-COPY dev.tbl_sgto_accion_oblig (id_sgto_accion, id_obligacion, id_user_auditoria, fecha_auditoria) FROM stdin;
-\.
-
-
---
--- Data for Name: tbl_sgto_acciones; Type: TABLE DATA; Schema: dev; Owner: postgres
---
-
-COPY dev.tbl_sgto_acciones (id_sgto_accion, descripcion_sgto, fecha_sgto, id_accion, id_user_auditoria, fecha_auditoria) FROM stdin;
-\.
-
-
---
--- Data for Name: tbl_tipos_contrato; Type: TABLE DATA; Schema: dev; Owner: postgres
---
-
-COPY dev.tbl_tipos_contrato (id_tipo_contrato, contrato, id_user_auditoria, fecha_auditoria) FROM stdin;
-1	PRESTACIÓN DE SERVICIOS	\N	2025-08-29 10:08:18.849461
-\.
-
-
---
--- Name: tbl_actividades_id_actividad_seq; Type: SEQUENCE SET; Schema: dev; Owner: postgres
---
-
-SELECT pg_catalog.setval('dev.tbl_actividades_id_actividad_seq', 16, true);
-
-
---
--- Name: tbl_componentes_id_componente_seq; Type: SEQUENCE SET; Schema: dev; Owner: postgres
---
-
-SELECT pg_catalog.setval('dev.tbl_componentes_id_componente_seq', 3, true);
-
-
---
--- Name: tbl_contratos_id_contrato_seq; Type: SEQUENCE SET; Schema: dev; Owner: postgres
---
-
-SELECT pg_catalog.setval('dev.tbl_contratos_id_contrato_seq', 3, true);
-
-
---
--- Name: tbl_empleado_componente_id_empl_comp_seq; Type: SEQUENCE SET; Schema: dev; Owner: postgres
---
-
-SELECT pg_catalog.setval('dev.tbl_empleado_componente_id_empl_comp_seq', 7, true);
-
-
---
--- Name: tbl_empleado_perfil_id_empl_perf_seq; Type: SEQUENCE SET; Schema: dev; Owner: postgres
---
-
-SELECT pg_catalog.setval('dev.tbl_empleado_perfil_id_empl_perf_seq', 9, true);
-
-
---
--- Name: tbl_empleados_app_sgt_act_id_empleado_seq; Type: SEQUENCE SET; Schema: dev; Owner: postgres
---
-
-SELECT pg_catalog.setval('dev.tbl_empleados_app_sgt_act_id_empleado_seq', 6, true);
-
-
---
--- Name: tbl_entidad_contratante_id_entidad_seq; Type: SEQUENCE SET; Schema: dev; Owner: postgres
---
-
-SELECT pg_catalog.setval('dev.tbl_entidad_contratante_id_entidad_seq', 1, true);
-
-
---
--- Name: tbl_estados_id_estado_seq; Type: SEQUENCE SET; Schema: dev; Owner: postgres
---
-
-SELECT pg_catalog.setval('dev.tbl_estados_id_estado_seq', 3, true);
-
-
---
--- Name: tbl_evidencias_id_evidencia_seq; Type: SEQUENCE SET; Schema: dev; Owner: postgres
---
-
-SELECT pg_catalog.setval('dev.tbl_evidencias_id_evidencia_seq', 1, true);
-
-
---
--- Name: tbl_menu_app_actividades_id_menu_seq; Type: SEQUENCE SET; Schema: dev; Owner: postgres
---
-
-SELECT pg_catalog.setval('dev.tbl_menu_app_actividades_id_menu_seq', 18, true);
-
-
---
--- Name: tbl_obligacion_contractual_id_obligacion_seq; Type: SEQUENCE SET; Schema: dev; Owner: postgres
---
-
-SELECT pg_catalog.setval('dev.tbl_obligacion_contractual_id_obligacion_seq', 37, true);
-
-
---
--- Name: tbl_perfiles_id_perfil_seq; Type: SEQUENCE SET; Schema: dev; Owner: postgres
---
-
-SELECT pg_catalog.setval('dev.tbl_perfiles_id_perfil_seq', 11, true);
-
-
---
--- Name: tbl_requerimiento_id_req_seq; Type: SEQUENCE SET; Schema: dev; Owner: postgres
---
-
-SELECT pg_catalog.setval('dev.tbl_requerimiento_id_req_seq', 15, true);
-
-
---
--- Name: tbl_sgto_acciones_id_sgto_accion_seq; Type: SEQUENCE SET; Schema: dev; Owner: postgres
---
-
-SELECT pg_catalog.setval('dev.tbl_sgto_acciones_id_sgto_accion_seq', 1, false);
-
-
---
--- Name: tbl_tipos_contrato_id_tipo_contrato_seq; Type: SEQUENCE SET; Schema: dev; Owner: postgres
---
-
-SELECT pg_catalog.setval('dev.tbl_tipos_contrato_id_tipo_contrato_seq', 1, true);
+ALTER TABLE ONLY dev.tbl_acciones
+    ADD CONSTRAINT tbl_acciones_pkey PRIMARY KEY (id_accion);
 
 
 --
@@ -1344,6 +878,55 @@ ALTER TABLE ONLY dev.tbl_empleado_componente
 
 ALTER TABLE ONLY dev.tbl_empleado_perfil
     ADD CONSTRAINT uq_tbl_empleado_perfil_inicio UNIQUE (id_empleado, id_perfil, fecha_inicio);
+
+
+--
+-- Name: idx_acc_obl_acc; Type: INDEX; Schema: dev; Owner: postgres
+--
+
+CREATE INDEX idx_acc_obl_acc ON dev.tbl_accion_obligacion USING btree (id_accion);
+
+
+--
+-- Name: idx_acc_obl_obl; Type: INDEX; Schema: dev; Owner: postgres
+--
+
+CREATE INDEX idx_acc_obl_obl ON dev.tbl_accion_obligacion USING btree (id_obligacion);
+
+
+--
+-- Name: idx_acc_obl_user_aud; Type: INDEX; Schema: dev; Owner: postgres
+--
+
+CREATE INDEX idx_acc_obl_user_aud ON dev.tbl_accion_obligacion USING btree (id_user_auditoria);
+
+
+--
+-- Name: idx_acciones_empleado; Type: INDEX; Schema: dev; Owner: postgres
+--
+
+CREATE INDEX idx_acciones_empleado ON dev.tbl_acciones USING btree (id_empleado);
+
+
+--
+-- Name: idx_acciones_estado; Type: INDEX; Schema: dev; Owner: postgres
+--
+
+CREATE INDEX idx_acciones_estado ON dev.tbl_acciones USING btree (id_estado);
+
+
+--
+-- Name: idx_acciones_req; Type: INDEX; Schema: dev; Owner: postgres
+--
+
+CREATE INDEX idx_acciones_req ON dev.tbl_acciones USING btree (id_req);
+
+
+--
+-- Name: idx_acciones_user_aud; Type: INDEX; Schema: dev; Owner: postgres
+--
+
+CREATE INDEX idx_acciones_user_aud ON dev.tbl_acciones USING btree (id_user_auditoria);
 
 
 --
@@ -1708,6 +1291,62 @@ CREATE UNIQUE INDEX uq_tbl_empleado_componente_activo ON dev.tbl_empleado_compon
 --
 
 CREATE UNIQUE INDEX uq_tbl_empleado_perfil_activo ON dev.tbl_empleado_perfil USING btree (id_empleado, id_perfil) WHERE ((fecha_fin IS NULL) AND (estado = 'activo'::text));
+
+
+--
+-- Name: tbl_accion_obligacion fk_acc_obl_acc; Type: FK CONSTRAINT; Schema: dev; Owner: postgres
+--
+
+ALTER TABLE ONLY dev.tbl_accion_obligacion
+    ADD CONSTRAINT fk_acc_obl_acc FOREIGN KEY (id_accion) REFERENCES dev.tbl_acciones(id_accion) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: tbl_accion_obligacion fk_acc_obl_obl; Type: FK CONSTRAINT; Schema: dev; Owner: postgres
+--
+
+ALTER TABLE ONLY dev.tbl_accion_obligacion
+    ADD CONSTRAINT fk_acc_obl_obl FOREIGN KEY (id_obligacion) REFERENCES dev.tbl_obligacion_contractual(id_obligacion) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: tbl_accion_obligacion fk_acc_obl_user_auditoria; Type: FK CONSTRAINT; Schema: dev; Owner: postgres
+--
+
+ALTER TABLE ONLY dev.tbl_accion_obligacion
+    ADD CONSTRAINT fk_acc_obl_user_auditoria FOREIGN KEY (id_user_auditoria) REFERENCES dev.tbl_users(id_user) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: tbl_acciones fk_accion_empleado; Type: FK CONSTRAINT; Schema: dev; Owner: postgres
+--
+
+ALTER TABLE ONLY dev.tbl_acciones
+    ADD CONSTRAINT fk_accion_empleado FOREIGN KEY (id_empleado) REFERENCES dev.tbl_empleados_app_sgt_act(id_empleado) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: tbl_acciones fk_accion_estado; Type: FK CONSTRAINT; Schema: dev; Owner: postgres
+--
+
+ALTER TABLE ONLY dev.tbl_acciones
+    ADD CONSTRAINT fk_accion_estado FOREIGN KEY (id_estado) REFERENCES dev.tbl_estados(id_estado) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: tbl_acciones fk_accion_req; Type: FK CONSTRAINT; Schema: dev; Owner: postgres
+--
+
+ALTER TABLE ONLY dev.tbl_acciones
+    ADD CONSTRAINT fk_accion_req FOREIGN KEY (id_req) REFERENCES dev.tbl_requerimiento(id_req) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: tbl_acciones fk_accion_user_auditoria; Type: FK CONSTRAINT; Schema: dev; Owner: postgres
+--
+
+ALTER TABLE ONLY dev.tbl_acciones
+    ADD CONSTRAINT fk_accion_user_auditoria FOREIGN KEY (id_user_auditoria) REFERENCES dev.tbl_users(id_user) ON UPDATE CASCADE ON DELETE SET NULL;
 
 
 --

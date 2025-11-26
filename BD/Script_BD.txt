@@ -1,0 +1,43 @@
+--COMANDO EN CMD WINDOWS PARA LOS SCRIPT DE LAS TABLAS
+**************************************************************************
+ OJO: Esto crea un archivo con los script. Se debe reemplazar el esquema.
+- Reemplazar "dev." por el esquema de producción "esquema_prod."
+- Buscar "SET search_path = dev" reemplazar el esquema
+ **************************************************************************
+pg_dump -U postgres -d Catastro ^
+--schema-only ^
+-n dev ^
+-t dev.tbl_role ^
+-t dev.tbl_menu_app_actividades ^
+-t dev.tbl_rol_menu_actividades ^
+-t dev.tbl_obligacion_contractual ^
+-t dev.tbl_perfil_obligaciones ^
+-t dev.tbl_evidencias ^
+-t dev.tbl_evidencia_componentes ^
+-t dev.tbl_entidad_contratante ^
+-t dev.tbl_tipos_contrato ^
+-t dev.tbl_componentes ^
+-t dev.tbl_estados ^
+-t dev.tbl_acciones ^
+-t dev.tbl_requerimiento ^
+-t dev.tbl_accion_obligacion ^
+-t dev.tbl_empleado_componente ^
+-t dev.tbl_asigna_requerimiento ^
+-t dev.tbl_actividad_obligacion ^
+-t dev.tbl_contratos ^
+-t dev.tbl_sgto_accion_oblig ^
+-t dev.tbl_sgto_acciones ^
+-t dev.tbl_actividades ^
+-t dev.tbl_perfiles ^
+-t dev.tbl_empleados_app_sgt_act ^
+-t dev.tbl_empleado_perfil ^
+-f estructura_dev.sql
+
+
+********************************************************
+EJECUTAR CMD WINDOWS PARA CREAR LAS TABLAS EN PRODUCCIÓN
+OJO: Ubicarse en el cmd en la ruta del archivo
+********************************************************
+psql -U postgres -d bd_produccion -f estructura_prod.sql
+
+
