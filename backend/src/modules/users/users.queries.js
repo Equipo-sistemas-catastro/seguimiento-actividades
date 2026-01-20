@@ -16,7 +16,7 @@ module.exports = {
         name: 'users_list',
         text: `
           SELECT id_user, TRIM(name_user) AS name, TRIM(email_user) AS email, id_perfil
-          FROM tbl_users
+          FROM tbl_usuarios_sgto_act
           ${where}
           ORDER BY name ASC
           LIMIT ${pageSize} OFFSET ${off};`,
@@ -24,7 +24,7 @@ module.exports = {
       },
       count: {
         name: 'users_count',
-        text: `SELECT COUNT(*)::int AS total FROM tbl_users ${where};`,
+        text: `SELECT COUNT(*)::int AS total FROM tbl_usuarios_sgto_act ${where};`,
         values
       },
       page, pageSize

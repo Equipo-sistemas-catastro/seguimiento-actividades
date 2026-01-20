@@ -156,7 +156,7 @@ function insertObligacion(obligacionTxt, userId = null) {
 function clearUsersByPerfil(idPerfil) {
   return {
     name: 'perfil_users_clear',
-    text: `UPDATE tbl_users SET id_perfil = NULL WHERE id_perfil = $1;`,
+    text: `UPDATE tbl_usuarios_sgto_act SET id_perfil = NULL WHERE id_perfil = $1;`,
     values: [idPerfil]
   };
 }
@@ -164,7 +164,7 @@ function assignUsersToPerfil(idPerfil, usuariosIds = []) {
   if (!usuariosIds?.length) return null;
   return {
     name: 'perfil_users_assign',
-    text: `UPDATE tbl_users SET id_perfil = $1 WHERE id_user = ANY($2::uuid[]);`,
+    text: `UPDATE tbl_usuarios_sgto_act SET id_perfil = $1 WHERE id_user = ANY($2::uuid[]);`,
     values: [idPerfil, usuariosIds]
   };
 }

@@ -169,7 +169,7 @@ function empleadoIdByUserId(userId) {
   return {
     text: `
       SELECT e.id_empleado
-      FROM tbl_users u
+      FROM tbl_usuarios_sgto_act u
       JOIN tbl_empleados_app_sgt_act e
         ON e.cedula_empleado = u.cedula_user
       WHERE u.id_user = $1;`,
@@ -178,7 +178,7 @@ function empleadoIdByUserId(userId) {
 }
 
 function userEmail(userId) {
-  return { text: `SELECT email_user FROM tbl_users WHERE id_user=$1;`, values: [userId] };
+  return { text: `SELECT email_user FROM tbl_usuarios_sgto_act WHERE id_user=$1;`, values: [userId] };
 }
 
 module.exports = {

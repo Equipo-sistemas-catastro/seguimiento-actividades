@@ -8,7 +8,7 @@ module.exports = {
           TRIM(u.name_user)  AS name,
           TRIM(u.email_user) AS email,
           u.id_role_user     AS id_role_user
-        FROM tbl_users u
+        FROM tbl_usuarios_sgto_act u
         WHERE TRIM(u.email_user) = $1
           AND TRIM(u.user_password) = $2
         LIMIT 1;`,
@@ -24,7 +24,7 @@ module.exports = {
           TRIM(u.name_user)  AS name,
           TRIM(u.email_user) AS email,
           u.id_role_user     AS id_role_user
-        FROM tbl_users u
+        FROM tbl_usuarios_sgto_act u
         WHERE u.id_user = $1
         LIMIT 1;`,
       values: [id]

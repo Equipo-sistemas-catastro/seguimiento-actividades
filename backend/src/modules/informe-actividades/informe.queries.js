@@ -3,7 +3,7 @@ module.exports = {
   qAnios: `
     WITH empleado AS (
       SELECT e.id_empleado
-      FROM tbl_users u
+      FROM tbl_usuarios_sgto_act u
       JOIN tbl_empleados_app_sgt_act e ON u.cedula_user = e.cedula_empleado
       WHERE u.id_user = $1
     )
@@ -17,7 +17,7 @@ module.exports = {
   qMeses: `
     WITH empleado AS (
       SELECT e.id_empleado
-      FROM tbl_users u
+      FROM tbl_usuarios_sgto_act u
       JOIN tbl_empleados_app_sgt_act e ON u.cedula_user = e.cedula_empleado
       WHERE u.id_user = $1
     )
@@ -44,7 +44,7 @@ module.exports = {
                 NULLIF(e.primer_apellido_empl, ''),
                 NULLIF(e.segundo_apellido_empl, '')
             )) AS nombre_empleado
-        FROM tbl_users u
+        FROM tbl_usuarios_sgto_act u
         JOIN tbl_empleados_app_sgt_act e ON u.cedula_user = e.cedula_empleado
         WHERE u.id_user = $1
     ),
