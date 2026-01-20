@@ -7,31 +7,31 @@
 pg_dump -U postgres -d Catastro ^
 --schema-only ^
 -n sgto_actividades ^
--t sgto_actividades.tbl_usuarios_sgto_act ^
 -t sgto_actividades.tbl_roles_sgto_act ^
+-t sgto_actividades.tbl_usuarios_sgto_act ^
 -t sgto_actividades.tbl_menu_app_actividades ^
 -t sgto_actividades.tbl_rol_menu_actividades ^
+-t sgto_actividades.tbl_perfiles ^
+-t sgto_actividades.tbl_componentes ^
 -t sgto_actividades.tbl_obligacion_contractual ^
 -t sgto_actividades.tbl_perfil_obligaciones ^
 -t sgto_actividades.tbl_evidencias ^
 -t sgto_actividades.tbl_evidencia_componentes ^
--t sgto_actividades.tbl_entidad_contratante ^
--t sgto_actividades.tbl_tipos_contrato ^
--t sgto_actividades.tbl_componentes ^
--t sgto_actividades.tbl_estados ^
--t sgto_actividades.tbl_acciones ^
--t sgto_actividades.tbl_requerimiento ^
--t sgto_actividades.tbl_accion_obligacion ^
--t sgto_actividades.tbl_empleado_componente ^
--t sgto_actividades.tbl_asigna_requerimiento ^
--t sgto_actividades.tbl_actividad_obligacion ^
--t sgto_actividades.tbl_contratos ^
--t sgto_actividades.tbl_sgto_accion_oblig ^
--t sgto_actividades.tbl_sgto_acciones ^
--t sgto_actividades.tbl_actividades ^
--t sgto_actividades.tbl_perfiles ^
 -t sgto_actividades.tbl_empleados_app_sgt_act ^
 -t sgto_actividades.tbl_empleado_perfil ^
+-t sgto_actividades.tbl_empleado_componente ^
+-t sgto_actividades.tbl_entidad_contratante ^
+-t sgto_actividades.tbl_tipos_contrato ^
+-t sgto_actividades.tbl_contratos ^
+-t sgto_actividades.tbl_estados ^
+-t sgto_actividades.tbl_requerimiento ^
+-t sgto_actividades.tbl_asigna_requerimiento ^
+-t sgto_actividades.tbl_acciones ^
+-t sgto_actividades.tbl_accion_obligacion ^
+-t sgto_actividades.tbl_sgto_acciones ^
+-t sgto_actividades.tbl_sgto_accion_oblig ^
+-t sgto_actividades.tbl_actividades ^
+-t sgto_actividades.tbl_actividad_obligacion ^
 -f estructura_sgto_actividades.sql
 
 
